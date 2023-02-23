@@ -2,7 +2,7 @@ package com.user.py.NettyServer;
 
 import com.google.gson.Gson;
 import com.user.py.NettyServer.chat.Chat;
-import com.user.py.NettyServer.chat.ChatFactory;
+import com.user.py.designPatten.factory.ChatFactory;
 import com.user.py.mq.RabbitService;
 import com.user.py.service.TeamService;
 import com.user.py.utils.GsonUtils;

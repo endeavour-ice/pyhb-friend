@@ -31,20 +31,26 @@ public class ChatGptChat implements Chat {
             throw new GlobalException(ErrorCode.NULL_ERROR, "请输入消息");
         }
         ChatRecord record = new ChatRecord();
-        record.setUserId(chatRecord.getUserId());
-        record.setFriendId(chatRecord.getSendId());
-        record.setMessage(chatRecord.getMessage());
+        String userId = chatRecord.getUserId();
+        record.setUserId(userId);
+        String sendId = chatRecord.getSendId();
+        record.setFriendId(sendId);
+        String recordMessage = chatRecord.getMessage();
+        record.setMessage(recordMessage);
         record.setSendTime(new Date());
         String toMess;
         try {
+            rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
             toMess = ChatGptUtils.sendChatG(mess);
         } catch (Exception e) {
-            toMess = "系统异常，请稍后!";
+            toMess = "I don't know";
         }
-        chatRecord.setMessage(toMess);
-        rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
         record.setMessage(toMess);
-        rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
+        record.setUserId(sendId);
+        record.setFriendId(userId);
+        record.setSendTime(new Date());
+        chatRecord.setMessage(toMess);
         cxt.channel().writeAndFlush(new TextWebSocketFrame(GsonUtils.getGson().toJson(message)));
+        rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
     }
 }

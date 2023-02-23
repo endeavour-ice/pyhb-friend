@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.user.py.common.ErrorCode;
+import com.user.py.designPatten.postFilter.FilterEntrance;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.PostMapper;
 import com.user.py.mode.constant.PostSortedType;
@@ -74,9 +75,15 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         String userId = postRequest.getUserId();
         String id = loginUser.getId();
         // 防止重复点击
+        if ( !StringUtils.hasText(id)) {
+            throw new GlobalException(ErrorCode.NO_LOGIN);
+        }
         synchronized (id.intern()) {
             if (!StringUtils.hasText(content) || !StringUtils.hasText(tagId)) {
                 throw new GlobalException(ErrorCode.NULL_ERROR);
+            }
+            if (!FilterEntrance.doFilter(postRequest)) {
+                throw new GlobalException(ErrorCode.PARAMS_ERROR, "文章内容不规范");
             }
             if (!StringUtils.hasText(userId) || !StringUtils.hasText(id)) {
                 throw new GlobalException(ErrorCode.NO_LOGIN);
@@ -114,25 +121,22 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         if (pageSize > 50) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
-        String postKey = redisPostList + userId + content + tagId + size + pageNum + content + size;
-        Page<Post> postPage = redisCache.getCacheObject(postKey);
-        if (postPage == null) {
-            postQueryWrapper.eq(StringUtils.hasText(userId), "user_id", userId);
-            postQueryWrapper.like(StringUtils.hasText(content), "content", content);
-            postQueryWrapper.eq(StringUtils.hasText(tagId), "tag_id", tagId);
-            if (sorted != null) {
-                switch (sorted) {
-                    case (PostSortedType.SORT_ORDER_DESC):
-                        postQueryWrapper.orderByDesc("create_time");
-                        break;
-                    case (PostSortedType.SORT_THUMBS_MOST):
-                        postQueryWrapper.orderByAsc("thumb_num");
-                        break;
-                }
+
+
+        postQueryWrapper.eq(StringUtils.hasText(userId), "user_id", userId);
+        postQueryWrapper.like(StringUtils.hasText(content), "content", content);
+        postQueryWrapper.eq(StringUtils.hasText(tagId), "tag_id", tagId);
+        if (sorted != null) {
+            switch (sorted) {
+                case (PostSortedType.SORT_ORDER_DESC):
+                    postQueryWrapper.orderByDesc("create_time");
+                    break;
+                case (PostSortedType.SORT_THUMBS_MOST):
+                    postQueryWrapper.orderByAsc("thumb_num");
+                    break;
             }
-            postPage = baseMapper.selectPage(new Page<>(current, pageSize), postQueryWrapper);
-            redisCache.setCacheObject(postKey, postPage, 30, TimeUnit.MINUTES);
         }
+        Page<Post> postPage = baseMapper.selectPage(new Page<>(current, pageSize), postQueryWrapper);
 
 
         Page<PostVo> postVOPage = new Page<>(postPage.getCurrent(), postPage.getSize(), postPage.getTotal());

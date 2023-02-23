@@ -1,5 +1,6 @@
-package com.user.py.NettyServer.chat;
+package com.user.py.designPatten.factory;
 
+import com.user.py.NettyServer.chat.*;
 import com.user.py.mode.constant.ChatType;
 
 import java.util.HashMap;
