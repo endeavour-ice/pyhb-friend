@@ -5,7 +5,7 @@ package com.user.py.mode.constant;
  * @Date 2023/2/23 10:45
  * @Description: Post状态
  */
-public class PostStatus {
+public interface PostStatus {
     /**
      * 待审核
      */
