@@ -62,6 +62,11 @@ public class UserFriendController {
         return B.ok(users);
     }
 
+    /**
+     * 拒绝好友 TODO 将接受好友合并
+     * @param id
+     * @return
+     */
     @GetMapping("/rejectFriend")
     public B<Integer> rejectFriend(@RequestParam(required = false) String id) {
         log.info("拒绝好友");

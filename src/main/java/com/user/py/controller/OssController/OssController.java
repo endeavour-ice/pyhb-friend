@@ -24,7 +24,12 @@ public class OssController {
     @Resource
     private OssService ossService;
 
-
+    /**
+     * 用户头像上传
+     * @param file
+     * @param request
+     * @return
+     */
     @PostMapping("/file/upload")
     @CurrentLimiting
     public B<String> upFile(MultipartFile file, HttpServletRequest request) {
@@ -33,6 +38,13 @@ public class OssController {
         return B.ok(url);
     }
 
+    /**
+     * 队伍头像上传
+     * @param file
+     * @param request
+     * @param teamID
+     * @return
+     */
     @PostMapping("/file/upload/team/{teamID}")
     @CurrentLimiting
     public B<String> upFileByTeam(MultipartFile file, HttpServletRequest request, @PathVariable String teamID) {
