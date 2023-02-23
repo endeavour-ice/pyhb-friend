@@ -2,6 +2,7 @@ package com.user.py.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.user.py.mode.domain.User;
+import com.user.py.mode.domain.vo.UserAvatarVo;
 import com.user.py.mode.request.UpdateUserRequest;
 import com.user.py.mode.request.UserRegisterRequest;
 import com.user.py.mode.request.UserSearchTagAndTxtRequest;
@@ -107,4 +108,6 @@ public interface IUserService extends IService<User> {
     boolean seeUserEmail(String email);
     // 根据邮箱查找用户
     User forgetUserEmail(String email);
+
+    List<UserAvatarVo>  getUserAvatarVoByIds(List list);
 }

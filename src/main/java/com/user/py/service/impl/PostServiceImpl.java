@@ -21,7 +21,6 @@ import com.user.py.service.IUserLabelService;
 import com.user.py.service.IUserService;
 import com.user.py.utils.RedisCache;
 import com.user.py.utils.UserUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -34,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.user.py.mode.constant.RedisKey.redisPostList;
 
 /**
  * <p>
@@ -64,7 +65,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
      */
     @Override
     public boolean addPost(AddPostRequest postRequest, User loginUser) {
-
+        // TODO 可以自定义标签，统计标签的数量，需要添加表或者字段
         if (postRequest == null) {
             throw new GlobalException(ErrorCode.NULL_ERROR, "请填写数据");
         }
@@ -72,24 +73,32 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         String tagId = postRequest.getTagId();
         String userId = postRequest.getUserId();
         String id = loginUser.getId();
-        if (!StringUtils.hasText(content) || !StringUtils.hasText(tagId)) {
-            throw new GlobalException(ErrorCode.NULL_ERROR);
+        // 防止重复点击
+        synchronized (id.intern()) {
+            if (!StringUtils.hasText(content) || !StringUtils.hasText(tagId)) {
+                throw new GlobalException(ErrorCode.NULL_ERROR);
+            }
+            if (!StringUtils.hasText(userId) || !StringUtils.hasText(id)) {
+                throw new GlobalException(ErrorCode.NO_LOGIN);
+            }
+            if (!userId.equals(id)) {
+                throw new GlobalException(ErrorCode.NO_LOGIN);
+            }
+            Post post = new Post();
+            post.setUserId(userId);
+            post.setContent(content);
+            post.setTagId(tagId);
+            boolean save = this.save(post);
+            if (save) {
+                redisCache.removeLikeKey(redisPostList);
+            }
+            return save;
         }
-        if (!StringUtils.hasText(userId) || !StringUtils.hasText(id)) {
-            throw new GlobalException(ErrorCode.NO_LOGIN);
-        }
-        if (!userId.equals(id)) {
-            throw new GlobalException(ErrorCode.NO_LOGIN);
-        }
-        Post post = new Post();
-        post.setUserId(userId);
-        post.setContent(content);
-        post.setTagId(tagId);
-        return this.save(post);
     }
 
     @Override
     public Page<PostVo> getPostList(PostPageRequest postPageRequest, HttpServletRequest request) {
+
         if (postPageRequest == null) {
             throw new GlobalException(ErrorCode.NULL_ERROR);
         }
@@ -105,21 +114,27 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         if (pageSize > 50) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
-
-        postQueryWrapper.eq(StringUtils.hasText(userId), "user_id", userId);
-        postQueryWrapper.like(StringUtils.hasText(content), "content", content);
-        postQueryWrapper.eq(StringUtils.hasText(tagId), "tag_id", tagId);
-        if (sorted != null) {
-            switch (sorted) {
-                case (PostSortedType.SORT_ORDER_DESC):
-                    postQueryWrapper.orderByDesc("create_time");
-                    break;
-                case (PostSortedType.SORT_THUMBS_MOST):
-                    postQueryWrapper.orderByAsc("thumb_num");
-                    break;
+        String postKey = redisPostList + userId + content + tagId + size + pageNum + content + size;
+        Page<Post> postPage = redisCache.getCacheObject(postKey);
+        if (postPage == null) {
+            postQueryWrapper.eq(StringUtils.hasText(userId), "user_id", userId);
+            postQueryWrapper.like(StringUtils.hasText(content), "content", content);
+            postQueryWrapper.eq(StringUtils.hasText(tagId), "tag_id", tagId);
+            if (sorted != null) {
+                switch (sorted) {
+                    case (PostSortedType.SORT_ORDER_DESC):
+                        postQueryWrapper.orderByDesc("create_time");
+                        break;
+                    case (PostSortedType.SORT_THUMBS_MOST):
+                        postQueryWrapper.orderByAsc("thumb_num");
+                        break;
+                }
             }
+            postPage = baseMapper.selectPage(new Page<>(current, pageSize), postQueryWrapper);
+            redisCache.setCacheObject(postKey, postPage, 30, TimeUnit.MINUTES);
         }
-        Page<Post> postPage = baseMapper.selectPage(new Page<>(current, pageSize), postQueryWrapper);
+
+
         Page<PostVo> postVOPage = new Page<>(postPage.getCurrent(), postPage.getSize(), postPage.getTotal());
         List<Post> postList = postPage.getRecords();
         if (postList.size() <= 0) {
@@ -131,11 +146,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         for (Post post : postList) {
             userIds.add(post.getUserId());
         }
-        Map<String, UserAvatarVo> userAvatarVoMap = userService.listByIds(userIds).stream().map(user -> {
-            UserAvatarVo userAvatarVo = new UserAvatarVo();
-            BeanUtils.copyProperties(user, userAvatarVo);
-            return userAvatarVo;
-        }).collect(Collectors.toMap(UserAvatarVo::getId, i -> i));
+        Map<String, List<UserAvatarVo>> userAvatarVoMap = userService.getUserAvatarVoByIds(userIds).stream().collect(Collectors.groupingBy(UserAvatarVo::getId));
         Map<String, List<PostVo>> postIdListMap = postList.stream().map(post -> {
             PostVo postVo = new PostVo();
             postVo.setId(post.getId());
@@ -144,7 +155,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             if (labelMap != null && labelMap.size() > 0) {
                 postVo.setTag(labelMap.get(post.getTagId()).getLabel());
             }
-            postVo.setUserAvatarVo(userAvatarVoMap.get(post.getUserId()));
+            postVo.setUserAvatarVo(userAvatarVoMap.get(post.getUserId()).get(0));
             postVo.setHasThumb(false);
             return postVo;
         }).collect(Collectors.groupingBy(PostVo::getId));
@@ -161,7 +172,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         } catch (Exception e) {
             //无登录不做特殊处理
         }
-
+        // TODO 是否收藏
         postVOPage.setRecords(postIdListMap.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
         return postVOPage;
     }
@@ -184,7 +195,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removePostByID(String id, User loginUser) {
-
         if (!StringUtils.hasText(id)) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }

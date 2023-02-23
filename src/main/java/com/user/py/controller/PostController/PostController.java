@@ -72,5 +72,6 @@ public class PostController {
         return isDo ? B.ok() : B.error(ErrorCode.ERROR);
     }
 
+    // TODO 收藏这里要进行表字段的添加
 
 }

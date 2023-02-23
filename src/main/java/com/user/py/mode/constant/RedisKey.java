@@ -23,6 +23,7 @@ public interface RedisKey {
     String redisRegisterCode = "redisRegisterCode:";
     String redisForgetCode = "redisRegisterCode:";
 
+    String redisPostList = "redisPostList";
 
 
 }

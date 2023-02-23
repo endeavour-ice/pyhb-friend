@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -103,6 +105,17 @@ public class RedisCache {
         return Boolean.TRUE.equals(redisTemplate.delete(key));
     }
 
+    public boolean removeLikeKey( String key) {
+        if (!StringUtils.hasText(key)) {
+            return false;
+        }
+        key= key + "*";
+        Set keys = redisTemplate.keys(key);
+        if (!CollectionUtils.isEmpty(keys)) {
+            return redisTemplate.delete(keys)>0;
+        }
+        return false;
+    }
     /**
      * 缓存基本的对象，Integer、String、实体类等
      *

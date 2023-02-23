@@ -15,6 +15,7 @@ import com.user.py.mapper.UserMapper;
 import com.user.py.mode.constant.RedisKey;
 import com.user.py.mode.constant.UserStatus;
 import com.user.py.mode.domain.User;
+import com.user.py.mode.domain.vo.UserAvatarVo;
 import com.user.py.mode.request.UpdateUserRequest;
 import com.user.py.mode.request.UserRegisterRequest;
 import com.user.py.mode.request.UserSearchTagAndTxtRequest;
@@ -488,6 +489,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         Page<User> page = new Page<>(current, size);
         Page<User> userPage = baseMapper.selectPage(page, wrapper);
+        // 通过stream 流的方式将列表里的每个user进行脱敏
         userPage.getRecords().forEach(UserUtils::getSafetyUser);
         Map<String, Object> map = new HashMap<>();
         map.put("records", userPage.getRecords());
@@ -569,6 +571,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             if (users == null || users.size() <= 0) {
                 return findUserList;
             }
+            // 用户id进行分组
             Map<String, List<User>> userListByUserIdMap = users.stream().map(UserUtils::getSafetyUser).collect(Collectors.groupingBy(User::getId));
 
             for (String userId : userIds) {
@@ -655,5 +658,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return this.getOne(wrapper);
         }
         return null;
+    }
+
+    @Override
+    public List<UserAvatarVo> getUserAvatarVoByIds(List list) {
+        if (list.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return baseMapper.getUserAvatarVoByIds(ListUtil.ListToString(list));
     }
 }

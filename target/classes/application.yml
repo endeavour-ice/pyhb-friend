@@ -50,8 +50,8 @@ server:
 mybatis-plus:
   mapper-locations: classpath:com/user/py/mapper/xml/*.xml
   #    日志
-  #  configuration:
-  #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl #开启sql日志
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl #开启sql日志
   global-config:
     db-config:
       logic-delete-field: flag # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)

@@ -117,7 +117,6 @@ public class UserController {
                                              @RequestParam(required = false) Long current, Long size,
                                              HttpServletRequest request) {
         Map<String, Object> user = userService.searchUser(request, username, current, size);
-        // 通过stream 流的方式将列表里的每个user进行脱敏
         return B.ok(user);
     }
 
