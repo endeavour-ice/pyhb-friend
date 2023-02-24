@@ -2,8 +2,8 @@ package com.user.py.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.UserFriendReq;
+import com.user.py.mode.domain.vo.UserVo;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ import java.util.List;
 public interface IUserFriendReqService extends IService<UserFriendReq> {
     void sendRequest(String fromUserId, String toUserId);
 
-    List<User> checkFriend(String userId);
+    List<UserVo> checkFriend(String userId);
 
     int Reject(String id);
 

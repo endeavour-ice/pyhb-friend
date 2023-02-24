@@ -9,6 +9,7 @@ import com.user.py.exception.GlobalException;
 import com.user.py.mode.constant.UserStatus;
 import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.UserFriend;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.mode.request.*;
 import com.user.py.mode.resp.SafetyUserResponse;
 import com.user.py.mq.RabbitService;
@@ -89,7 +90,7 @@ public class UserController {
 
     // 用户登录
     @PostMapping("/Login")
-    public B<User> userLogin(@RequestBody UserLoginRequest userLogin, HttpServletRequest request) {
+    public B<UserVo> userLogin(@RequestBody UserLoginRequest userLogin, HttpServletRequest request) {
         if (userLogin == null) {
             throw new GlobalException(ErrorCode.NULL_ERROR, "数据为空!");
         }
@@ -99,7 +100,7 @@ public class UserController {
         if (hasEmpty) {
             throw new GlobalException(ErrorCode.NULL_ERROR, "账号密码为空!");
         }
-        User user = userService.userLogin(userAccount, password, request);
+        UserVo user = userService.userLogin(userAccount, password, request);
         return B.ok(user);
     }
 
@@ -168,9 +169,8 @@ public class UserController {
 
 
     @PostMapping("/search/tags/txt")
-    public B<List<User>> getSearchUserTag(@RequestBody UserSearchTagAndTxtRequest userSearchTagAndTxtRequest) {
-
-        List<User> userList = userService.searchUserTag(userSearchTagAndTxtRequest);
+    public B<List<UserVo>> getSearchUserTag(@RequestBody UserSearchTagAndTxtRequest userSearchTagAndTxtRequest) {
+        List<UserVo> userList = userService.searchUserTag(userSearchTagAndTxtRequest);
         return B.ok(userList);
     }
 
@@ -201,11 +201,11 @@ public class UserController {
 
     // 搜索用户
     @GetMapping("/searchUserName")
-    public B<List<User>> searchUserName(@RequestParam(required = false) String friendUserName,
+    public B<List<UserVo>> searchUserName(@RequestParam(required = false) String friendUserName,
                                         HttpServletRequest request) {
         User user = UserUtils.getLoginUser(request);
         String userId = user.getId();
-        List<User> friendList = userService.friendUserName(userId, friendUserName);
+        List<UserVo> friendList = userService.friendUserName(userId, friendUserName);
         if (friendList.size() == 0) {
             return B.error(ErrorCode.NULL_ERROR);
         }
@@ -216,8 +216,8 @@ public class UserController {
      * 根据单个标签搜索
      */
     @GetMapping("/searchUserTag")
-    public B<List<User>> searchUserTag(@RequestParam("tag") String tag, HttpServletRequest request) {
-        List<User> userList = userService.searchUserTag(tag, request);
+    public B<List<UserVo>> searchUserTag(@RequestParam("tag") String tag, HttpServletRequest request) {
+        List<UserVo> userList = userService.searchUserTag(tag, request);
         return B.ok(userList);
     }
 
@@ -229,11 +229,11 @@ public class UserController {
      * @return
      */
     @GetMapping("/match")
-    public B<List<User>> matchUsers(long num, HttpServletRequest request) {
+    public B<List<UserVo>> matchUsers(long num, HttpServletRequest request) {
         if (num <= 0 || num > 20) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR, "参数错误...");
         }
-        List<User> userVos = userService.matchUsers(num, request);
+        List<UserVo> userVos = userService.matchUsers(num, request);
         return B.ok(userVos);
     }
 }

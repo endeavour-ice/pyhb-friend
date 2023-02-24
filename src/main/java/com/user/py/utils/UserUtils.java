@@ -3,6 +3,7 @@ package com.user.py.utils;
 import com.user.py.mode.domain.User;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.mode.resp.SafetyUserResponse;
 import org.springframework.util.StringUtils;
 
@@ -37,11 +38,11 @@ public class UserUtils {
         }
         return user;
     }
-    public static User getSafetyUser(User user) {
+    public static UserVo getSafetyUser(User user) {
         if (user == null) {
             return null;
         }
-        User cleanUser = new User();
+        UserVo cleanUser = new UserVo();
         cleanUser.setId(user.getId());
         cleanUser.setUsername(user.getUsername());
         cleanUser.setUserAccount(user.getUserAccount());

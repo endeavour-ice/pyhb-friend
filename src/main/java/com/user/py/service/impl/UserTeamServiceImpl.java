@@ -7,6 +7,7 @@ import com.user.py.exception.GlobalException;
 import com.user.py.mapper.UserTeamMapper;
 import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.UserTeam;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.service.IUserService;
 import com.user.py.service.UserTeamService;
 import com.user.py.utils.UserUtils;
@@ -17,6 +18,7 @@ import org.springframework.util.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 * @author BING
@@ -30,7 +32,7 @@ public class UserTeamServiceImpl extends ServiceImpl<UserTeamMapper, UserTeam>
     private IUserService userService;
 
     @Override
-    public List<User> getUserTeamById(String teamId, HttpServletRequest request) {
+    public List<UserVo> getUserTeamById(String teamId, HttpServletRequest request) {
         if (!StringUtils.hasText(teamId)) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
@@ -50,8 +52,8 @@ public class UserTeamServiceImpl extends ServiceImpl<UserTeamMapper, UserTeam>
         if (users == null || users.size() <= 0) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
-        users.forEach(UserUtils::getSafetyUser);
-        return users;
+        return users.stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
+
     }
 }
 

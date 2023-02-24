@@ -5,6 +5,7 @@ import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.domain.User;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.mode.request.AddFriendUSerUser;
 import com.user.py.mode.resp.FriendUserResponse;
 import com.user.py.service.IUserFriendReqService;
@@ -55,10 +56,10 @@ public class UserFriendController {
 
     // 查看好友申请
     @GetMapping("/checkFriend")
-    public B<List<User>> CheckFriendRequests(HttpServletRequest request) {
+    public B<List<UserVo>> CheckFriendRequests(HttpServletRequest request) {
         User user = UserUtils.getLoginUser(request);
         String userId = user.getId();
-        List<User> users = friendReqService.checkFriend(userId);
+        List<UserVo> users = friendReqService.checkFriend(userId);
         return B.ok(users);
     }
 

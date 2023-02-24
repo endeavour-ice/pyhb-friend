@@ -1,8 +1,8 @@
 package com.user.py.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.UserTeam;
+import com.user.py.mode.domain.vo.UserVo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -14,5 +14,5 @@ import java.util.List;
 */
 public interface UserTeamService extends IService<UserTeam> {
 
-    List<User> getUserTeamById(String teamId, HttpServletRequest request);
+    List<UserVo> getUserTeamById(String teamId, HttpServletRequest request);
 }

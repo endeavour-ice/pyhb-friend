@@ -3,6 +3,7 @@ package com.user.py.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.vo.UserAvatarVo;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.mode.request.UpdateUserRequest;
 import com.user.py.mode.request.UserRegisterRequest;
 import com.user.py.mode.request.UserSearchTagAndTxtRequest;
@@ -38,7 +39,7 @@ public interface IUserService extends IService<User> {
      * @param password    密码
      * @return 用户信息
      */
-    User userLogin(String userAccount, String password , HttpServletRequest request);
+    UserVo userLogin(String userAccount, String password , HttpServletRequest request);
 
 
     /**
@@ -66,7 +67,7 @@ public interface IUserService extends IService<User> {
      * 根据标签搜索用户
      * @return
      */
-    List<User> searchUserTag(UserSearchTagAndTxtRequest userSearchTagAndTxtRequest);
+    List<UserVo> searchUserTag(UserSearchTagAndTxtRequest userSearchTagAndTxtRequest);
 
     /**
      *  修改用户
@@ -76,7 +77,7 @@ public interface IUserService extends IService<User> {
      */
     int getUserByUpdateID( UpdateUserRequest updateUser,HttpServletRequest request);
 
-    List<User> friendUserName(String userID, String friendUserName);
+    List<UserVo> friendUserName(String userID, String friendUserName);
 
     Map<String, Object> selectPageIndexList(long current, long size);
 
@@ -88,7 +89,7 @@ public interface IUserService extends IService<User> {
      * @param request
      * @return
      */
-    List<User> searchUserTag(String tag, HttpServletRequest request);
+    List<UserVo> searchUserTag(String tag, HttpServletRequest request);
 
     /**
      * 匹配
@@ -96,7 +97,7 @@ public interface IUserService extends IService<User> {
      * @param request 登录
      * @return 数组
      */
-    List<User> matchUsers(long num, HttpServletRequest request);
+    List<UserVo> matchUsers(long num, HttpServletRequest request);
 
     /**
      * 用户忘记密码

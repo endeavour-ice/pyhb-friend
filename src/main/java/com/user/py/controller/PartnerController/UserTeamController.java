@@ -2,7 +2,7 @@ package com.user.py.controller.PartnerController;
 
 
 import com.user.py.common.B;
-import com.user.py.mode.domain.User;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.service.UserTeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,9 +31,8 @@ public class UserTeamController {
      * @return
      */
     @GetMapping("/get")
-    public B<List<User>> getUserTeamById(@RequestParam("teamId") String teamId, HttpServletRequest request) {
-
-        List<User> users = userTeamService.getUserTeamById(teamId, request);
+    public B<List<UserVo>> getUserTeamById(@RequestParam("teamId") String teamId, HttpServletRequest request) {
+        List<UserVo> users = userTeamService.getUserTeamById(teamId, request);
         return B.ok(users);
     }
 

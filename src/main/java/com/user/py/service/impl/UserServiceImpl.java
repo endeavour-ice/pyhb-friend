@@ -17,6 +17,7 @@ import com.user.py.mode.constant.RedisKey;
 import com.user.py.mode.constant.UserStatus;
 import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.vo.UserAvatarVo;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.mode.request.UpdateUserRequest;
 import com.user.py.mode.request.UserRegisterRequest;
 import com.user.py.mode.request.UserSearchTagAndTxtRequest;
@@ -163,7 +164,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public User userLogin(String userAccount, String password, HttpServletRequest request) {
+    public UserVo userLogin(String userAccount, String password, HttpServletRequest request) {
         // 1. 校验
         if (userAccount.length() < 3) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR, "账号错误");
@@ -190,10 +191,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (user.getUserStatus().equals(UserStatus.LOCKING)) {
             throw new GlobalException(ErrorCode.NO_AUTH, "该用户以锁定...");
         }
-        User cleanUser = UserUtils.getSafetyUser(user);
+        UserVo cleanUser = UserUtils.getSafetyUser(user);
         // 记录用户的登录态
         HttpSession session = request.getSession();
-        String token = JwtUtils.getJwtToken(cleanUser);
+        String token = JwtUtils.getJwtToken(user);
         session.setAttribute(USER_LOGIN_STATE, token);
         return cleanUser;
     }
@@ -246,7 +247,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 返回用户列表
      */
     @Override
-    public List<User> searchUserTag(UserSearchTagAndTxtRequest userSearchTagAndTxtRequest) {
+    public List<UserVo> searchUserTag(UserSearchTagAndTxtRequest userSearchTagAndTxtRequest) {
         if (userSearchTagAndTxtRequest == null) {
             throw new GlobalException(ErrorCode.NULL_ERROR, "请求数据为空");
         }
@@ -292,7 +293,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             }).map(UserUtils::getSafetyUser).collect(Collectors.toList());
         }
 
-        return userList;
+        return userList.stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
     }
 
 
@@ -309,7 +310,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         wrapper.select("avatar_url", "user_account", "id", "tags", "profile");
         Page<User> commentPage = baseMapper.selectPage(new Page<>(current, size), wrapper);
         Map<String, Object> map = new HashMap<>();
-        List<User> userList = commentPage.getRecords();
+        List<UserVo> userList = commentPage.getRecords().stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
         map.put("items", userList);
         map.put("current", commentPage.getCurrent());
         map.put("pages", commentPage.getPages());
@@ -434,7 +435,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public List<User> friendUserName(String userID, String friendUserName) {
+    public List<UserVo> friendUserName(String userID, String friendUserName) {
         if (!StringUtils.hasText(friendUserName)) {
             throw new GlobalException(ErrorCode.NULL_ERROR);
         }
@@ -445,8 +446,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             throw new GlobalException(ErrorCode.NULL_ERROR, "查无此人");
         }
         userList = userList.stream().filter(user -> !userID.equals(user.getId())).collect(Collectors.toList());
-        userList.forEach(UserUtils::getSafetyUser);
-        return userList;
+        return userList.stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
 
     }
 
@@ -491,9 +491,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         Page<User> page = new Page<>(current, size);
         Page<User> userPage = baseMapper.selectPage(page, wrapper);
         // 通过stream 流的方式将列表里的每个user进行脱敏
-        userPage.getRecords().forEach(UserUtils::getSafetyUser);
+        List<UserVo> userVoList = userPage.getRecords().stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
         Map<String, Object> map = new HashMap<>();
-        map.put("records", userPage.getRecords());
+        map.put("records", userVoList);
         map.put("current", userPage.getCurrent());
         map.put("total", userPage.getTotal());
         return map;
@@ -507,7 +507,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 返回标签
      */
     @Override
-    public List<User> searchUserTag(String tag, HttpServletRequest request) {
+    public List<UserVo> searchUserTag(String tag, HttpServletRequest request) {
         if (!StringUtils.hasText(tag)) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
@@ -516,8 +516,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         wrapper.like("tags", tag);
         Page<User> commentPage = baseMapper.selectPage(new Page<>(1, 200), wrapper);
         List<User> list = commentPage.getRecords();
-        list.parallelStream().forEach(UserUtils::getSafetyUser);
-        return list;
+        return list.parallelStream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
     }
 
     /**
@@ -528,7 +527,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 返回
      */
     @Override
-    public List<User> matchUsers(long num, HttpServletRequest request) {
+    public List<UserVo> matchUsers(long num, HttpServletRequest request) {
         User loginUser = UserUtils.getLoginUser(request);
         String tags = loginUser.getTags();
         if (!StringUtils.hasText(tags)) {
@@ -565,7 +564,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 pairs.add(new Pair<>(distance, user.getId()));
             }
         }
-        List<User> findUserList = new ArrayList<>();
+        List<UserVo> findUserList = new ArrayList<>();
         if (pairs.size() > 0) {
             List<String> userIds = pairs.stream().map(Pair::getValue).collect(Collectors.toList());
             List<User> users = this.listByIds(userIds);
@@ -573,7 +572,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 return findUserList;
             }
             // 用户id进行分组
-            Map<String, List<User>> userListByUserIdMap = users.stream().map(UserUtils::getSafetyUser).collect(Collectors.groupingBy(User::getId));
+            Map<String, List<UserVo>> userListByUserIdMap = users.stream().map(UserUtils::getSafetyUser).collect(Collectors.groupingBy(UserVo::getId));
 
             for (String userId : userIds) {
                 findUserList.add(userListByUserIdMap.get(userId).get(0));

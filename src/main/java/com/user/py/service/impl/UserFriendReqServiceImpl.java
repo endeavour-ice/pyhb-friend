@@ -10,6 +10,7 @@ import com.user.py.mode.constant.RedisKey;
 import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.UserFriend;
 import com.user.py.mode.domain.UserFriendReq;
+import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
 import com.user.py.service.IUserFriendReqService;
@@ -81,7 +82,7 @@ public class UserFriendReqServiceImpl extends ServiceImpl<UserFriendReqMapper, U
     }
 
     @Override
-    public List<User> checkFriend(String userId) {
+    public List<UserVo> checkFriend(String userId) {
         QueryWrapper<UserFriendReq> wrapper = new QueryWrapper<>();
         wrapper.eq("to_userid", userId);
         List<UserFriendReq> friendReqList = baseMapper.selectList(wrapper);
@@ -102,7 +103,7 @@ public class UserFriendReqServiceImpl extends ServiceImpl<UserFriendReqMapper, U
         if (users.isEmpty()) {
             throw new RuntimeException("查找申请的用户为空");
         }
-        return users.stream().peek(UserUtils::getSafetyUser).collect(Collectors.toList());
+        return users.stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
 
     }
 
