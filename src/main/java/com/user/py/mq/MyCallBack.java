@@ -1,12 +1,14 @@
 package com.user.py.mq;
 
 import com.google.gson.Gson;
+import com.user.py.listener.SaveMessageMq;
 import com.user.py.mode.domain.ChatRecord;
 import com.user.py.service.IChatRecordService;
 import com.user.py.utils.EmailUtil;
-import com.user.py.utils.GsonUtils;
+import com.user.py.designPatten.singleton.GsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.ReturnedMessage;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -31,6 +33,8 @@ public class MyCallBack implements RabbitTemplate.ConfirmCallback, RabbitTemplat
     private IChatRecordService recordService;
     @Autowired
     private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private SaveMessageMq saveMessageMq;
 
     @PostConstruct
     private void init() {
@@ -49,26 +53,37 @@ public class MyCallBack implements RabbitTemplate.ConfirmCallback, RabbitTemplat
      */
     @Override
     public void confirm(CorrelationData correlationData, boolean ack, String cause) {
+
         if (!ack) {
             ReturnedMessage message = correlationData.getReturned();
-            ChatRecord chatRecord = null;
+            Object object = null;
             if (message != null) {
                 try {
                     Gson gson = GsonUtils.getGson();
-                    boolean save;
-                    int a = 0;
-                    String messages = new String(message.getMessage().getBody(), StandardCharsets.UTF_8);
-                    chatRecord = gson.fromJson(messages, ChatRecord.class);
-                    do {
-                        save = recordService.save(chatRecord);
-                        a++;
-                    } while (!save && a <= 5);
-                    boolean isEmail = EmailUtil.sendAlarmEmail("聊天信息保存失败,失败原因: " + cause + " 失败信息为: " + chatRecord);
-                    if (!isEmail) {
-                        log.error("报警短信发送失败");
+                    Message messageMessage = message.getMessage();
+                    boolean saveMessage = saveMessageMq.saveMessage(messageMessage, cause);
+                    if (saveMessage) {
+                        boolean save;
+                        int a = 0;
+                        String messages = new String(messageMessage.getBody(), StandardCharsets.UTF_8);
+                        object = gson.fromJson(messages, Object.class);
+
+                        if (object instanceof ChatRecord) {
+                            ChatRecord chatRecord = (ChatRecord) object;
+                            do {
+                                save = recordService.save(chatRecord);
+                                a++;
+                            } while (!save && a <= 5);
+                            boolean isEmail = EmailUtil.sendAlarmEmail("聊天信息保存失败,失败原因: " + cause + " 失败信息为: " + chatRecord);
+                            if (!isEmail) {
+                                log.error("报警短信发送失败");
+                            }
+                        }
                     }
+
+
                 } catch (Exception e) {
-                    EmailUtil.sendAlarmEmail("聊天信息保存失败,失败原因: " + cause + " 失败信息为: " + chatRecord + "报错原因为: " + e.getMessage());
+                    EmailUtil.sendAlarmEmail("聊天信息保存失败,失败原因: " + cause + " 失败信息为: " + object + "报错原因为: " + e.getMessage());
                 }
             }
 

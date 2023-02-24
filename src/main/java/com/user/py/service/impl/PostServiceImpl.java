@@ -22,7 +22,11 @@ import com.user.py.service.IUserLabelService;
 import com.user.py.service.IUserService;
 import com.user.py.utils.RedisCache;
 import com.user.py.utils.UserUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -32,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.user.py.mode.constant.RedisKey.redisPostList;
@@ -56,6 +59,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
     private RedisCache redisCache;
     @Resource
     private IUserService userService;
+
+    @Autowired
+   private DataSourceTransactionManager dataSourceTransactionManager;
+    @Autowired
+    private TransactionDefinition transactionDefinition;
 
     /**
      * 添加论坛
@@ -227,7 +235,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
 
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public boolean doThumb(String postId, HttpServletRequest request) {
         if (!StringUtils.hasText(postId)) {
             return false;
@@ -240,27 +247,35 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         String userId = loginUser.getId();
         boolean result;
         synchronized (userId.intern()) {
-            boolean isDo = redisCache.isCachSet(postId, userId);
-            if (isDo) {
-                QueryWrapper<PostThumb> thumbQueryWrapper = new QueryWrapper<>();
-                thumbQueryWrapper.eq("post_id", postId);
-                thumbQueryWrapper.eq("user_id", userId);
+            QueryWrapper<PostThumb> thumbQueryWrapper = new QueryWrapper<>();
+            thumbQueryWrapper.eq("post_id", postId);
+            thumbQueryWrapper.eq("user_id", userId);
+            long count = thumbService.count(thumbQueryWrapper);
+            if (count>=1) {
                 // 取消点赞
-                result = thumbService.remove(thumbQueryWrapper);
-                if (result) {
+                TransactionStatus transaction = null;
+                try {
+                    transaction = dataSourceTransactionManager.getTransaction(transactionDefinition);
+                    result = thumbService.remove(thumbQueryWrapper);
+                    if (!result) {
+                        throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+                    }
                     result = this.update()
                             .eq("id", postId)
                             .ge("thumb_num", 0)
                             .setSql("thumb_num=thumb_num-1").update();
-                    redisCache.removeCachSet(postId, userId);
-                    if (result && redisCache.removeCachSet(postId, userId)) {
-                        return true;
-                    } else {
+                    if (!result) {
                         throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
                     }
-                } else {
-                    throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+                    dataSourceTransactionManager.commit(transaction);
+                    return true;
+                } catch (Exception e) {
+                    if (transaction != null) {
+                        dataSourceTransactionManager.rollback(transaction);
+                    }
+                    return false;
                 }
+
             } else {
                 // 点赞
                 PostThumb postThumb = new PostThumb();
@@ -271,11 +286,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
                     result = this.update()
                             .eq("id", postId)
                             .setSql("thumb_num=thumb_num+1").update();
-                    if (result && redisCache.addCacheSet(postId, userId, 30, TimeUnit.MINUTES) > 0) {
-                        return true;
-                    } else {
-                        throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
-                    }
+                    return result;
 
                 } else {
                     throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);

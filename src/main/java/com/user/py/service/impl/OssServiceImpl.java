@@ -5,6 +5,7 @@ import cn.hutool.core.util.IdUtil;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.user.py.common.ErrorCode;
+import com.user.py.designPatten.singleton.DataUtils;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.constant.RedisKey;
 import com.user.py.mode.domain.Team;
@@ -350,7 +351,7 @@ public class OssServiceImpl implements OssService {
      */
     public boolean sendQQEmail(String receives, String code, String name) {
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+        SimpleDateFormat sdf = DataUtils.getFdt();
         // 模板
         String str = "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><p style='font-size: 20px;font-weight:bold;'>尊敬的：" + name + "，您好！</p>"
                 + "<p style='text-indent:2em; font-size: 20px;'>欢迎注册伙伴匹配系统，您本次的验证码是 "

@@ -37,18 +37,19 @@ public class ChatGptChat implements Chat {
         record.setFriendId(sendId);
         String recordMessage = chatRecord.getMessage();
         record.setMessage(recordMessage);
-        record.setSendTime(new Date());
+        record.setSendTime(DataUtils.getFdt().format(new Date()));
         String toMess;
         try {
             rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
             toMess = ChatGptUtils.sendChatG(mess);
         } catch (Exception e) {
+            log.error(e.getMessage());
             toMess = "I don't know";
         }
         record.setMessage(toMess);
         record.setUserId(sendId);
         record.setFriendId(userId);
-        record.setSendTime(new Date());
+        record.setSendTime(DataUtils.getFdt().format(new Date()));
         chatRecord.setMessage(toMess);
         cxt.channel().writeAndFlush(new TextWebSocketFrame(GsonUtils.getGson().toJson(message)));
         rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);

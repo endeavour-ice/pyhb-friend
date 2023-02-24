@@ -3,7 +3,7 @@ package com.user.py.mode.socket_;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.user.py.utils.GsonUtils;
+import com.user.py.designPatten.singleton.GsonUtils;
 
 /**
  * @author ice

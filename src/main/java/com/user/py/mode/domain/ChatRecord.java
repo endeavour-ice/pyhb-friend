@@ -38,7 +38,7 @@ public class ChatRecord implements Serializable {
     @ApiModelProperty("是否已读 0 未读")
     private Integer hasRead;
     // 发送的时间
-    private Date sendTime;
+    private String sendTime;
 
     private Date createTime;
 

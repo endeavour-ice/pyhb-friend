@@ -2,7 +2,7 @@ package com.user.py.NettyServer;
 
 import com.google.gson.Gson;
 import com.user.py.NettyServer.chat.Chat;
-import com.user.py.designPatten.factory.ChatFactory;
+import com.user.py.NettyServer.chat.ChatFactory;
 import com.user.py.mq.RabbitService;
 import com.user.py.service.TeamService;
 import com.user.py.utils.GsonUtils;
@@ -31,8 +31,7 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
     private static final RabbitService recordService = SpringUtilObject.getBean(RabbitService.class);
     private static final TeamService team = SpringUtilObject.getBean(TeamService.class);
 
-    // 时间格式器 如果有需要可以将发送时间 发送的前端的好友
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) {
@@ -45,6 +44,13 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
         } catch (Exception e) {
             log.error(e.getMessage());
             mess = GsonUtils.getGson().fromJson(message, Message.class);
+        }
+        ChatRecordVo chatRecord = mess.getChatRecord();
+        String mes = chatRecord.getMessage();
+        try {
+           chatRecord.setMessage(SensitiveUtils.sensitive(mes));
+        } catch (Exception ignored) {
+
         }
         Chat chat = ChatFactory.getChat(mess.getType());
         chat.doChat(mess, ctx);

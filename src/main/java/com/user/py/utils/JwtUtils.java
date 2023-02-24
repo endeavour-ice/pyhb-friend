@@ -1,6 +1,7 @@
 package com.user.py.utils;
 
 import com.google.gson.Gson;
+import com.user.py.designPatten.singleton.GsonUtils;
 import com.user.py.mode.domain.User;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;

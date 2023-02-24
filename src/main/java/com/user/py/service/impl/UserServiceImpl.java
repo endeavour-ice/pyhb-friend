@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.user.py.common.ErrorCode;
+import com.user.py.designPatten.singleton.GsonUtils;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.UserMapper;
 import com.user.py.mode.constant.RedisKey;

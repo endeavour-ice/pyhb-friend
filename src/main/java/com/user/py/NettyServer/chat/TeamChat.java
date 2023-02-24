@@ -6,7 +6,7 @@ import com.user.py.mode.domain.TeamChatRecord;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
 import com.user.py.service.TeamService;
-import com.user.py.utils.GsonUtils;
+import com.user.py.designPatten.singleton.GsonUtils;
 import com.user.py.utils.SpringUtilObject;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;

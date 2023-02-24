@@ -25,20 +25,26 @@ public class RedisListener {
 
     @Resource
     private RedisCache redisCache;
-
+    @Resource
+    private SaveMessageMq saveMessageMq;
     @RabbitListener(queues = MqClient.REMOVE_REDIS_QUEUE)
     public void removeRedisByKey(Message message, Channel channel, String redisKey) {
-        if (StringUtils.hasText(redisKey)) {
-            if (redisCache.hasKey(redisKey)) {
-                boolean delete = redisCache.deleteObject(redisKey);
-                if (delete) {
-                    log.info("删除redis =>  key: {} 成功",redisKey);
-                }else {
-                    log.error("删除redis =>  key: {} 失败",redisKey);
+        if (saveMessageMq.saveMessage(message)) {
+            if (StringUtils.hasText(redisKey)) {
+                if (redisCache.hasKey(redisKey)) {
+                    boolean delete = redisCache.deleteObject(redisKey);
+                    if (delete) {
+                        log.info("删除redis =>  key: {} 成功",redisKey);
+                    }else {
+                        log.error("删除redis =>  key: {} 失败",redisKey);
+                    }
                 }
+            } else {
+                log.error("删除redis的key为空");
             }
-        } else {
-            log.error("删除redis的key为空");
+        }else {
+            log.error("消息重复消费，消息ID: "+message.getMessageProperties().getMessageId());
         }
+
     }
 }

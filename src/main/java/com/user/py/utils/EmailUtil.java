@@ -1,5 +1,6 @@
 package com.user.py.utils;
 
+import com.user.py.designPatten.singleton.DataUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.mail.*;
@@ -69,7 +70,7 @@ public class EmailUtil {
     }
 
     public static boolean sendAlarmEmail(String str) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+        SimpleDateFormat sdf = DataUtils.getFdt();
         String qq = "3521315291@qq.com";
         String theme = "警报！！";
         String message = "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><p style='font-size: 20px;font-weight:bold;'>管理员 ，您好！</p>"

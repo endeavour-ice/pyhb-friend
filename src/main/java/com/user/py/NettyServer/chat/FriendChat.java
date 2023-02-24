@@ -2,11 +2,12 @@ package com.user.py.NettyServer.chat;
 
 import com.user.py.NettyServer.Message;
 import com.user.py.NettyServer.UserChannelMap;
+import com.user.py.designPatten.singleton.DataUtils;
 import com.user.py.mode.domain.ChatRecord;
 import com.user.py.mode.domain.vo.ChatRecordVo;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
-import com.user.py.utils.GsonUtils;
+import com.user.py.designPatten.singleton.GsonUtils;
 import com.user.py.utils.SpringUtilObject;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -33,7 +34,7 @@ public class FriendChat implements Chat{
         record.setUserId(chatRecord.getUserId());
         record.setFriendId(chatRecord.getSendId());
         record.setMessage(chatRecord.getMessage());
-        record.setSendTime(new Date());
+        record.setSendTime(DataUtils.getFdt().format(new Date()));
         if (channel != null) {
             record.setHasRead(1);
             rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);

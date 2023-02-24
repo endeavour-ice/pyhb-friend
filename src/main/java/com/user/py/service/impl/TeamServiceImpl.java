@@ -33,7 +33,6 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -61,7 +60,6 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     private ITeamChatRecordService chatRecordService;
 
     // 时间格式器
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
     @Override
     public TeamUserVo getByTeamId(String id) {
