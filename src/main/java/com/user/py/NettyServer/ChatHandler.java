@@ -2,11 +2,10 @@ package com.user.py.NettyServer;
 
 import com.google.gson.Gson;
 import com.user.py.NettyServer.chat.Chat;
-import com.user.py.NettyServer.chat.ChatFactory;
-import com.user.py.mq.RabbitService;
-import com.user.py.service.TeamService;
-import com.user.py.utils.GsonUtils;
-import com.user.py.utils.SpringUtilObject;
+import com.user.py.designPatten.factory.ChatFactory;
+import com.user.py.designPatten.singleton.GsonUtils;
+import com.user.py.mode.domain.vo.ChatRecordVo;
+import com.user.py.utils.SensitiveUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -15,8 +14,6 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.text.SimpleDateFormat;
 
 /**
  * @author ice
@@ -27,10 +24,6 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
 
     // 用来保存所有的客服端连接
     private static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-
-    private static final RabbitService recordService = SpringUtilObject.getBean(RabbitService.class);
-    private static final TeamService team = SpringUtilObject.getBean(TeamService.class);
-
 
 
     @Override

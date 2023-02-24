@@ -2,16 +2,18 @@ package com.user.py.NettyServer.chat;
 
 import com.user.py.NettyServer.Message;
 import com.user.py.common.ErrorCode;
+import com.user.py.designPatten.singleton.DataUtils;
+import com.user.py.designPatten.singleton.GsonUtils;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.domain.ChatRecord;
 import com.user.py.mode.domain.vo.ChatRecordVo;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
 import com.user.py.utils.ChatGptUtils;
-import com.user.py.utils.GsonUtils;
 import com.user.py.utils.SpringUtilObject;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
@@ -21,6 +23,7 @@ import java.util.Date;
  * @Date 2023/2/12 16:40
  * @Description: TODO
  */
+@Slf4j
 public class ChatGptChat implements Chat {
     private static final RabbitService rabbitService = SpringUtilObject.getBean(RabbitService.class);
     @Override
