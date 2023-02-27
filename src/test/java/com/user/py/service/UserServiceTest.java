@@ -4,7 +4,9 @@ import com.user.py.mapper.MessageMqMapper;
 import com.user.py.mapper.UserMapper;
 import com.user.py.mode.domain.MessageMq;
 import com.user.py.mode.domain.vo.UserAvatarVo;
+import com.user.py.mode.request.AddCommentRequest;
 import com.user.py.utils.ListUtil;
+import com.user.py.utils.SensitiveUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -36,9 +38,21 @@ class UserServiceTest {
         messageMq.setMessageBody("12");
         System.out.println(messageMqMapper.insert(messageMq));
     }
-    public static void main(String[] args) {
-        String s = null;
-        String s1 = s + "asd";
-        System.out.println(s1);
+    public static void main(String[] args) throws Exception {
+        AddCommentRequest addCommentRequest = new AddCommentRequest();
+        String s = "UltraSurf asdas";
+        addCommentRequest.setContent(s);
+        boolean t = T(addCommentRequest);
+
+        System.out.println(t);
+        System.out.println(addCommentRequest.getContent());
+    }
+
+    public static boolean T(AddCommentRequest addCommentRequest) throws Exception {
+        String content = addCommentRequest.getContent();
+        String sensitive = SensitiveUtils.sensitive(content);
+        System.out.println(sensitive);
+        addCommentRequest.setContent(sensitive);
+        return true;
     }
 }

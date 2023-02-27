@@ -1,12 +1,9 @@
 package com.user.py.controller.PostController;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
-import com.user.py.mode.domain.vo.PostCommentVo;
 import com.user.py.mode.request.AddCommentRequest;
-import com.user.py.mode.request.PostCommentRequest;
 import com.user.py.service.IPostCommentService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,9 +36,6 @@ public class PostCommentController {
         return isCom ? B.ok() : B.error(ErrorCode.ERROR);
     }
 
-    @PostMapping("/getComment")
-    public B<Page<PostCommentVo>> getCommentList(@RequestBody PostCommentRequest commentRequest, HttpServletRequest request) {
-        Page<PostCommentVo> postCommentVos = commentService.getCommentList(commentRequest);
-        return B.ok(postCommentVos);
-    }
+
+
 }

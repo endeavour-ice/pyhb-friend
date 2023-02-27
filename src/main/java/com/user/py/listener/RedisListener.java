@@ -5,11 +5,13 @@ import com.user.py.mq.MqClient;
 import com.user.py.utils.RedisCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 
 /**
  * @Author ice
@@ -29,6 +31,8 @@ public class RedisListener {
     private SaveMessageMq saveMessageMq;
     @RabbitListener(queues = MqClient.REMOVE_REDIS_QUEUE)
     public void removeRedisByKey(Message message, Channel channel, String redisKey) {
+        MessageProperties messageProperties = message.getMessageProperties();
+        long deliveryTag = messageProperties.getDeliveryTag();
         if (saveMessageMq.saveMessage(message)) {
             if (StringUtils.hasText(redisKey)) {
                 if (redisCache.hasKey(redisKey)) {
@@ -42,7 +46,18 @@ public class RedisListener {
             } else {
                 log.error("删除redis的key为空");
             }
+            try {
+                channel.basicAck(deliveryTag, false);
+            } catch (IOException e) {
+                log.error("接受失败: "+e.getMessage());
+                saveMessageMq.saveMessage(message, e.getMessage());
+            }
         }else {
+            try {
+                channel.basicAck(deliveryTag, false);
+            } catch (IOException ignored) {
+
+            }
             log.error("消息重复消费，消息ID: "+message.getMessageProperties().getMessageId());
         }
 

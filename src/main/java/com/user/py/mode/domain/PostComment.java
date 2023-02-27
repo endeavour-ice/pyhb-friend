@@ -33,7 +33,7 @@ public class PostComment implements Serializable {
 
     @ApiModelProperty("评论用户 id")
     private String userId;
-
+    private String replyId;
 
     @ApiModelProperty("评论内容")
     private String content;

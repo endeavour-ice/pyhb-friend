@@ -12,6 +12,7 @@ import com.user.py.mode.domain.Post;
 import com.user.py.mode.domain.PostThumb;
 import com.user.py.mode.domain.User;
 import com.user.py.mode.domain.UserLabel;
+import com.user.py.mode.domain.vo.CommentVo;
 import com.user.py.mode.domain.vo.PostVo;
 import com.user.py.mode.domain.vo.UserAvatarVo;
 import com.user.py.mode.request.AddPostRequest;
@@ -28,14 +29,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.user.py.mode.constant.RedisKey.redisPostList;
@@ -59,9 +59,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
     private RedisCache redisCache;
     @Resource
     private IUserService userService;
-
     @Autowired
-   private DataSourceTransactionManager dataSourceTransactionManager;
+    private DataSourceTransactionManager dataSourceTransactionManager;
     @Autowired
     private TransactionDefinition transactionDefinition;
 
@@ -82,16 +81,21 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         String tagId = postRequest.getTagId();
         String userId = postRequest.getUserId();
         String id = loginUser.getId();
+
         // 防止重复点击
-        if ( !StringUtils.hasText(id)) {
+        if (!StringUtils.hasText(id)) {
             throw new GlobalException(ErrorCode.NO_LOGIN);
         }
         synchronized (id.intern()) {
             if (!StringUtils.hasText(content) || !StringUtils.hasText(tagId)) {
                 throw new GlobalException(ErrorCode.NULL_ERROR);
             }
-            if (!FilterEntrance.doFilter(postRequest)) {
-                throw new GlobalException(ErrorCode.PARAMS_ERROR, "文章内容不规范");
+            try {
+                if (!FilterEntrance.doFilter(postRequest,null)) {
+                    throw new GlobalException(ErrorCode.PARAMS_ERROR, "文章内容不规范");
+                }
+            } catch (Exception ignored) {
+
             }
             if (!StringUtils.hasText(userId) || !StringUtils.hasText(id)) {
                 throw new GlobalException(ErrorCode.NO_LOGIN);
@@ -99,6 +103,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             if (!userId.equals(id)) {
                 throw new GlobalException(ErrorCode.NO_LOGIN);
             }
+
             Post post = new Post();
             post.setUserId(userId);
             post.setContent(content);
@@ -126,11 +131,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         int current = pageNum <= 0 ? 1 : pageNum;
         int size = postPageRequest.getPageSize();
         int pageSize = size <= 0 ? 10 : size;
-        if (pageSize > 50) {
-            throw new GlobalException(ErrorCode.PARAMS_ERROR);
+        if (pageSize > 30) {
+            pageSize = 20;
         }
-
-
         postQueryWrapper.eq(StringUtils.hasText(userId), "user_id", userId);
         postQueryWrapper.like(StringUtils.hasText(content), "content", content);
         postQueryWrapper.eq(StringUtils.hasText(tagId), "tag_id", tagId);
@@ -145,8 +148,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             }
         }
         Page<Post> postPage = baseMapper.selectPage(new Page<>(current, pageSize), postQueryWrapper);
-
-
         Page<PostVo> postVOPage = new Page<>(postPage.getCurrent(), postPage.getSize(), postPage.getTotal());
         List<Post> postList = postPage.getRecords();
         if (postList.size() <= 0) {
@@ -165,12 +166,21 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             postVo.setContent(post.getContent());
             postVo.setThumb(post.getThumbNum());
             if (labelMap != null && labelMap.size() > 0) {
-                postVo.setTag(labelMap.get(post.getTagId()).getLabel());
+                String postTagId = post.getTagId();
+                UserLabel userLabel = labelMap.get(postTagId);
+                String label = null;
+                if (userLabel != null) {
+                     label = userLabel.getLabel();
+                }
+                postVo.setTag(label);
             }
             postVo.setUserAvatarVo(userAvatarVoMap.get(post.getUserId()).get(0));
             postVo.setHasThumb(false);
             return postVo;
         }).collect(Collectors.groupingBy(PostVo::getId));
+        Set<String> postIds = postIdListMap.keySet();
+        CompletableFuture<Map<String, List<String>>> completableFuture =
+                CompletableFuture.supplyAsync(() -> getCommentByListPostId(postIds));
 
         // 是否点赞
 
@@ -184,8 +194,20 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         } catch (Exception e) {
             //无登录不做特殊处理
         }
+        // 评论
+        List<PostVo> postVoList = postIdListMap.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        Map<String, List<String>> map;
+        try {
+            map = completableFuture.get();
+        } catch (Exception e) {
+            throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+        }
+        for (PostVo postVo : postVoList) {
+            String id = postVo.getId();
+            postVo.setCommentList(map.get(id));
+        }
         // TODO 是否收藏
-        postVOPage.setRecords(postIdListMap.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+        postVOPage.setRecords(postVoList);
         return postVOPage;
     }
 
@@ -233,6 +255,33 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         return true;
     }
 
+    private Map<String, List<String>> getCommentByListPostId(Set<String> postIds) {
+        Map<String, List<String>> hashMap = new HashMap<>();
+        if (CollectionUtils.isEmpty(postIds)) {
+            return hashMap;
+        }
+        List<CommentVo> postCommentByPostIds = baseMapper.getPostCommentByPostIds(postIds);
+        Map<String, List<CommentVo>> map = postCommentByPostIds.stream().collect(Collectors.groupingBy(CommentVo::getPostId));
+        Set<String> pIds = map.keySet();
+        for (String pId : pIds) {
+            List<String> commentStringList = new ArrayList<>();
+            List<CommentVo> commentVoList = map.get(pId);
+            for (CommentVo commentVo : commentVoList) {
+                String commentName = commentVo.getCommentName();
+                String replyName = commentVo.getReplyName();
+                String content = commentVo.getContent();
+                String format;
+                if (StringUtils.hasText(replyName)) {
+                    format = String.format("%s 回复 %s: %s", commentName, replyName, content);
+                } else {
+                    format = String.format("%s: %s", commentName, content);
+                }
+                commentStringList.add(format);
+            }
+            hashMap.put(pId, commentStringList);
+        }
+        return hashMap;
+    }
 
     @Override
     public boolean doThumb(String postId, HttpServletRequest request) {
@@ -251,7 +300,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             thumbQueryWrapper.eq("post_id", postId);
             thumbQueryWrapper.eq("user_id", userId);
             long count = thumbService.count(thumbQueryWrapper);
-            if (count>=1) {
+            if (count >= 1) {
                 // 取消点赞
                 TransactionStatus transaction = null;
                 try {

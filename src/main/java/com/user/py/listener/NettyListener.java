@@ -11,6 +11,7 @@ import com.user.py.service.ITeamChatRecordService;
 import com.user.py.designPatten.singleton.GsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -36,8 +37,10 @@ public class NettyListener {
 
     @RabbitListener(queues = MqClient.NETTY_QUEUE, ackMode = AckMode.MANUAL)
     public void SaveChatRecord(Message message, Channel channel) {
-        String messageId = message.getMessageProperties().getMessageId();
+        MessageProperties messageProperties = message.getMessageProperties();
+        String messageId = messageProperties.getMessageId();
         boolean saveMessage = saveMessageMq.saveMessage(message);
+        long deliveryTag = messageProperties.getDeliveryTag();
         if (saveMessage) {
             try {
                 Gson gson = GsonUtils.getGson();
@@ -51,18 +54,22 @@ public class NettyListener {
                 } else {
                     log.error("保存聊天记录失败");
                 }
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                channel.basicAck(deliveryTag, false);
             } catch (Exception e) {
                 saveMessageMq.saveMessage(messageId,e.getMessage());
                 log.error("保存聊天记录失败" + e.getMessage());
                 try {
-                    channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+                    channel.basicNack(deliveryTag, false, false);
                 } catch (IOException ex) {
                     log.error("消息队列拒绝失败" + e.getMessage());
                 }
             }
         } else {
-
+            try {
+                channel.basicAck(deliveryTag,false);
+            } catch (IOException e) {
+                log.error("消息队列拒绝失败" + e.getMessage());
+            }
             log.error("消息重复消费，消息ID: " + messageId);
         }
 

@@ -1,5 +1,7 @@
 package com.user.py.mode.domain;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
  */
 @Data
 public class MessageMq {
+    @TableId(type=IdType.INPUT)
     private String messageId;
     private String messageBody;
     private String error;

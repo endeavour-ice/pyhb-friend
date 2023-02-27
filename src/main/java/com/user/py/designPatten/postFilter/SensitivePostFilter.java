@@ -2,7 +2,9 @@ package com.user.py.designPatten.postFilter;
 
 import com.user.py.designPatten.postFilter.FilterBase.ArticleContext;
 import com.user.py.designPatten.postFilter.FilterBase.BaseArticleFilter;
+import com.user.py.mode.request.AddCommentRequest;
 import com.user.py.mode.request.AddPostRequest;
+import com.user.py.utils.SensitiveUtils;
 
 /**
  * @Author ice
@@ -11,10 +13,18 @@ import com.user.py.mode.request.AddPostRequest;
  */
 public class SensitivePostFilter extends BaseArticleFilter {
     @Override
-    public boolean doFilter(ArticleContext articleContext) {
+    public boolean doFilter(ArticleContext articleContext) throws Exception {
+
         AddPostRequest request = articleContext.getRequest();
-        String content = request.getContent();
-        System.out.println("字数少于10");
+        AddCommentRequest addCommentRequest = articleContext.getAddCommentRequest();
+        if (request != null) {
+            String content = request.getContent();
+            request.setContent(SensitiveUtils.sensitive(content));
+        }
+        if (addCommentRequest != null) {
+            String content = addCommentRequest.getContent();
+            addCommentRequest.setContent(SensitiveUtils.sensitive(content));
+        }
         return true;
     }
 }

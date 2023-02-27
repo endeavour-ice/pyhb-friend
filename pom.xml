@@ -177,12 +177,6 @@
             <artifactId>hanlp</artifactId>
             <version>portable-1.8.3</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.theokanning.openai-gpt3-java</groupId>
-            <artifactId>client</artifactId>
-            <version>0.8.1</version>
-        </dependency>
         <!-- https://doc.xiaominfo.com/knife4j/documentation/get_start.html-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
@@ -194,6 +188,11 @@
             <groupId>io.github.toolgood</groupId>
             <artifactId>toolgood-words</artifactId>
             <version>3.0.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unfbx</groupId>
+            <artifactId>chatgpt-java</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
     <build>

@@ -1,6 +1,7 @@
 package com.user.py.controller.PostController;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.user.py.annotation.CurrentLimiting;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
@@ -63,6 +64,7 @@ public class PostController {
      * @return
      */
     @PostMapping("/doThumb")
+    @CurrentLimiting
     public B<Boolean> doThumb(@RequestBody PostDoThumbRequest postDoThumbRequest, HttpServletRequest request) {
         String postId;
         if (postDoThumbRequest == null || !StringUtils.hasText(postId = postDoThumbRequest.getPostId())) {

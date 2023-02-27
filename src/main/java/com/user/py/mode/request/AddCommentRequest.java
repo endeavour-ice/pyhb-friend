@@ -14,8 +14,8 @@ public class AddCommentRequest implements Serializable {
 
     private static final long serialVersionUID = 9029128488392994120L;
     private String postId;
-
-    private String commentId;
-
+    private String userId;
     private String content;
+    private String replyId;
+
 }

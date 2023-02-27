@@ -3,6 +3,7 @@ package com.user.py.mode.domain.vo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @Author ice
@@ -18,6 +19,8 @@ public class PostVo implements Serializable {
     private Integer thumb;
     private UserAvatarVo userAvatarVo;
     private String tag;
+    private List<String> commentList;
     private boolean hasThumb;
+
 }
 

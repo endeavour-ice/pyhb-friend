@@ -56,7 +56,7 @@ public class DieListener {
             }
         } else {
             try {
-                channel.basicNack(message.getMessageProperties().getDeliveryTag(),false,false);
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
             } catch (IOException e) {
                 log.error("消息拒绝失败: "+e.getMessage());
             }

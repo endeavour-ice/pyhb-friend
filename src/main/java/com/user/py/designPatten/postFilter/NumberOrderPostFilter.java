@@ -11,8 +11,10 @@ import com.user.py.designPatten.postFilter.FilterBase.BaseArticleFilter;
 public class NumberOrderPostFilter extends BaseArticleFilter {
     @Override
     public boolean doFilter(ArticleContext articleContext) {
-        int length = articleContext.getRequest().getContent().length();
-        System.out.println("字数小于5");
+        if (articleContext.getRequest()!=null) {
+            int length = articleContext.getRequest().getContent().length();
+            return length >= 5 && length <= 200;
+        }
         return true;
     }
 }
