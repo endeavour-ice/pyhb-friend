@@ -31,7 +31,7 @@ create table post
         primary key,
     user_id        bigint                             not null comment '创建用户 id',
     content        text                               null comment '内容',
-    tag_id         bigint                             not null comment '标签id',
+    tags         varchar(255)                              null comment '标签id',
     review_status  int(20)  default 0                 not null comment '状态（0-待审核, 1-通过, 2-拒绝）',
     review_message varchar(512)                       null comment '审核信息',
     view_num       int(20)  default 0                 not null comment '浏览数',
@@ -63,6 +63,16 @@ create table post_thumb
     update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间'
 )
     comment '帖子点赞记录';
+create table post_collect
+(
+    id          bigint auto_increment comment 'id'
+        primary key,
+    post_id     bigint                             not null comment '帖子 id',
+    user_id     bigint                             not null comment '创建用户 id',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间'
+)
+    comment '帖子收藏记录';
 create table read_team_chat
 (
     id          varchar(255)                       not null
@@ -135,7 +145,7 @@ create table user_friend
     id          varchar(255)                         not null comment 'id'
         primary key,
     user_id     varchar(255)                         null comment '用户id',
-    friends_id  varchar(255)                         null comment '朋友id',
+    friend_id  varchar(255)                         null comment '朋友id',
     comments    varchar(255)                         null comment '朋友备注',
     create_time datetime   default CURRENT_TIMESTAMP null comment '添加好友日期',
     is_delete   tinyint(1) default 0                 not null

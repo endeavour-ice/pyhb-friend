@@ -2,12 +2,61 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.user.py.mapper.UserMapper">
 
-    <resultMap id="resultUserAvatarVo" type="com.user.py.mode.domain.vo.UserAvatarVo">
+    <resultMap id="resultUserAvatarVo" type="com.user.py.mode.entity.vo.UserAvatarVo">
         <id property="id" column="id"/>
         <result property="username" column="user_account"/>
         <result property="avatarUrl" column="avatar_url"/>
     </resultMap>
     <select id="getUserAvatarVoByIds" resultMap="resultUserAvatarVo">
-        select id,user_account, avatar_url from `user` where id in (${ids});
+        select id, user_account, avatar_url
+        from `user`
+        where id in (${ids});
     </select>
+    <select id="getUserCount" resultType="java.lang.Long">
+        select count(1)
+        from `user`
+    </select>
+    <resultMap id="userVo" type="com.user.py.mode.entity.vo.UserVo">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="userAccount" column="user_account"/>
+        <result property="avatarUrl" column="avatar_url"/>
+        <result property="gender" column="gender"/>
+        <result property="tel" column="tel"/>
+        <result property="email" column="email"/>
+        <result property="userStatus" column="user_status"/>
+        <result property="role" column="role"/>
+        <result property="planetCode" column="planet_code"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    <select id="selectOrderByPage" resultMap="userVo">
+        select id,
+        username,
+        user_account,
+        avatar_url,
+        gender,
+        tel,
+        email,
+        user_status,
+        `role`,
+        planet_code,
+        create_time
+        from `user`
+        <choose>
+            <when test="pageNum>=700000">
+                where id>= (select id from `user`  limit #{pageNum},1)  limit #{pageSize}
+            </when>
+            <when test="userName!=null and userName!=''">
+                where user_account like #{userName}"%" limit #{pageNum},#{pageSize}
+            </when>
+            <otherwise>
+                limit #{pageNum},#{pageSize}
+            </otherwise>
+        </choose>
+
+
+
+    </select>
+
+
 </mapper>

@@ -2,8 +2,8 @@ package com.user.py.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.UserFriend;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.UserFriend;
 import com.user.py.mode.resp.FriendUserResponse;
 
 import javax.servlet.http.HttpServletRequest;

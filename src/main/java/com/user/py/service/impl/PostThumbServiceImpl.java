@@ -2,7 +2,7 @@ package com.user.py.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.user.py.mapper.PostThumbMapper;
-import com.user.py.mode.domain.PostThumb;
+import com.user.py.mode.entity.PostThumb;
 import com.user.py.service.IPostThumbService;
 import org.springframework.stereotype.Service;
 

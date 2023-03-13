@@ -2,4 +2,31 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.user.py.mapper.ChatRecordMapper">
 
+
+    <update id="updateReadBatchById">
+
+        update chat_record
+        set has_read=1
+        where and is_delete=0 id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+    <select id="selectAllByUserIdAndFriendId" resultType="com.user.py.mode.entity.ChatRecord">
+        SELECT id,
+               user_id,
+               friend_id,
+               has_read,
+               send_time,
+               message
+        FROM chat_record
+        <include refid="whereUserAndFriend"/>
+    </select>
+    <sql id="whereUserAndFriend">
+        WHERE is_delete = 0 and (user_id = #{userId} and friend_id = #{friendId})
+        or (user_id = #{friendId} and friend_id = #{userId})
+    </sql>
+    <select id="selectUserAddFriend" resultType="java.lang.Integer">
+        SELECT count(1) from user_friend <include refid="whereUserAndFriend"/>
+    </select>
 </mapper>

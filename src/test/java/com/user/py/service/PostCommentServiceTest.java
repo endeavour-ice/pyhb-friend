@@ -1,14 +1,13 @@
 package com.user.py.service;
 
 import com.user.py.mapper.PostMapper;
-import com.user.py.mode.domain.vo.CommentVo;
+import com.user.py.mode.entity.vo.CommentVo;
+import com.user.py.mode.entity.vo.PostVo;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @Author ice
@@ -29,6 +28,16 @@ public class PostCommentServiceTest {
         for (CommentVo postCommentByPostId : postCommentByPostIds) {
             System.out.println(postCommentByPostId);
         }
+    }
+    @Test
+    public void PostListTest() {
+        List<PostVo> postVoList = postMapper.selectIndexByPage(0, 10,3);
+        postVoList.forEach(postVo -> System.out.println(postVo.getThumb()));
+    }
+
+    public static void main(String[] args) {
+        List<Integer> integers = Arrays.asList(4, 2,56,5);
+        integers.stream().sorted((a,b)-> Integer.compare(b,a)).forEach(System.out::println);
 
     }
 }

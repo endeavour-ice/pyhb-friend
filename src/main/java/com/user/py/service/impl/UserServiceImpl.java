@@ -1,6 +1,5 @@
 package com.user.py.service.impl;
 
-
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -15,14 +14,17 @@ import com.user.py.exception.GlobalException;
 import com.user.py.mapper.UserMapper;
 import com.user.py.mode.constant.RedisKey;
 import com.user.py.mode.constant.UserStatus;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.vo.UserAvatarVo;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.UserLabel;
+import com.user.py.mode.entity.vo.UserAvatarVo;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.mode.request.UpdateUserRequest;
 import com.user.py.mode.request.UserRegisterRequest;
 import com.user.py.mode.request.UserSearchTagAndTxtRequest;
+import com.user.py.mode.resp.SafetyUserResponse;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
+import com.user.py.service.IUserLabelService;
 import com.user.py.service.IUserService;
 import com.user.py.utils.*;
 import javafx.util.Pair;
@@ -35,6 +37,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -59,7 +62,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     private RedisCache redisCache;
     @Resource
     private RabbitService rabbitService;
+    @Resource
+    private IUserLabelService labelService;
 
+    @Override
+    public SafetyUserResponse getCurrent(User currentUser) {
+        return UserUtils.getSafetyUserResponse(currentUser);
+    }
 
     @Override
     @Transactional
@@ -166,7 +175,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Override
     public UserVo userLogin(String userAccount, String password, HttpServletRequest request) {
         // 1. 校验
-        if (userAccount.length() < 3) {
+        if (userAccount.length() <= 0) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR, "账号错误");
         }
         if (password.length() < 6) {
@@ -406,9 +415,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         // 设置标签
         if (StringUtils.hasText(tags)) {
-            String oldUserTags = oldUser.getTags();
+            Gson gson = GsonUtils.getGson();
+            List<String> tagIds;
+            String oldUserTags;
+            try {
+                tagIds = gson.fromJson(tags, new TypeToken<List<String>>() {
+                }.getType());
+                List<UserLabel> userLabels = labelService.listByIds(tagIds);
+                if (userLabels.isEmpty()) {
+                    throw new GlobalException(ErrorCode.PARAMS_ERROR);
+                }
+                List<String> tagList = userLabels.stream().map(UserLabel::getLabel).collect(Collectors.toList());
+                tags = gson.toJson(tagList);
+                oldUserTags = oldUser.getTags();
+            } catch (Exception e) {
+                throw new GlobalException(ErrorCode.PARAMS_ERROR, "修改失败,请重试");
+            }
+
             if (StringUtils.hasText(oldUserTags) && oldUserTags.equals(tags)) {
-                throw new GlobalException(ErrorCode.NULL_ERROR, "重复提交...");
+                throw new GlobalException(ErrorCode.NULL_ERROR, "重复提交");
             }
             boolean isBoolean = this.TagsUtil(userId);
             if (isBoolean) {
@@ -421,7 +446,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (update > 0) {
             rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.REMOVE_REDIS_KEY, RedisKey.redisIndexKey);
         } else {
-            throw new GlobalException(ErrorCode.PARAMS_ERROR, "修改失败");
+            throw new GlobalException(ErrorCode.PARAMS_ERROR, "修改失败,请重试");
         }
         String token = JwtUtils.getJwtToken(loginUser);
         request.getSession().setAttribute(USER_LOGIN_STATE, token);
@@ -435,19 +460,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public List<UserVo> friendUserName(String userID, String friendUserName) {
-        if (!StringUtils.hasText(friendUserName)) {
-            throw new GlobalException(ErrorCode.NULL_ERROR);
-        }
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.like("user_account", friendUserName);
-        List<User> userList = baseMapper.selectList(userQueryWrapper);
-        if (userList.size() == 0) {
-            throw new GlobalException(ErrorCode.NULL_ERROR, "查无此人");
-        }
-        userList = userList.stream().filter(user -> !userID.equals(user.getId())).collect(Collectors.toList());
-        return userList.stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
-
+    public Map<String, Object> friendUserName(String userID, String friendUserName, Long num, Long size) {
+        return getSearchUserByPageMap(num, size, friendUserName, userID);
     }
 
 
@@ -476,26 +490,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (!admin) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR, "你不是管理员");
         }
-        QueryWrapper<User> wrapper = new QueryWrapper<>();
-        // 如果name有值
-        if (StringUtils.hasText(username)) {
-            wrapper.like("username", username);
-        }
+        return getSearchUserByPageMap(current, size, username, null);
+    }
+
+    private Map<String, Object> getSearchUserByPageMap(Long current, Long size, String userAccount, String userId) {
+        Long count;
+        List<UserVo> userVoList;
         if (current == null || size == null) {
             current = 1L;
             size = 30L;
         }
         if (size > 30L) {
-            throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION, "请求数据有误");
+            size = 10L;
         }
-        Page<User> page = new Page<>(current, size);
-        Page<User> userPage = baseMapper.selectPage(page, wrapper);
-        // 通过stream 流的方式将列表里的每个user进行脱敏
-        List<UserVo> userVoList = userPage.getRecords().stream().map(UserUtils::getSafetyUser).collect(Collectors.toList());
+        if (redisCache.hasKey(RedisKey.userTotal)) {
+            Integer countLong = redisCache.getCacheObject(RedisKey.userTotal);
+            count = Long.parseLong(String.valueOf(countLong));
+        } else {
+            CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> baseMapper.getUserCount());
+            try {
+                count = future.get();
+                redisCache.setCacheObject(RedisKey.userTotal, count, TimeUtils.getRemainSecondsOneDay(new Date()), TimeUnit.SECONDS);
+            } catch (Exception e) {
+                throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+            }
+        }
+        if (StringUtils.hasText(userAccount)) {
+            userVoList = baseMapper.selectOrderByPage(current * size, size, userAccount);
+        } else {
+            userVoList = baseMapper.selectOrderByPage(current * size, size, null);
+        }
+        if (StringUtils.hasText(userId) && userVoList.size() > 0) {
+            userVoList = userVoList.stream().filter(user -> !userId.equals(user.getId())).collect(Collectors.toList());
+        }
         Map<String, Object> map = new HashMap<>();
         map.put("records", userVoList);
-        map.put("current", userPage.getCurrent());
-        map.put("total", userPage.getTotal());
+        map.put("current", current);
+        map.put("total", count != null && count > 0 ? count / size : 0);
         return map;
     }
 

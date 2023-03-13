@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -43,8 +44,8 @@ public class UserLabelController {
      * @return
      */
     @GetMapping("/getLabel")
-    public B<List<String>> getLabel(HttpServletRequest request) {
-        List<String> list= labelService.getLabel(request);
+    public B<Map<String,String>> getLabel(HttpServletRequest request) {
+        Map<String,String> list= labelService.getLabel(request);
         return B.ok(list);
     }
 

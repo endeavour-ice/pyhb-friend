@@ -1,10 +1,7 @@
 package com.user.py.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.PostComment;
-import com.user.py.mode.request.AddCommentRequest;
-
-import javax.servlet.http.HttpServletRequest;
+import com.user.py.mode.entity.PostComment;
 
 /**
  * <p>
@@ -16,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface IPostCommentService extends IService<PostComment> {
 
-    boolean doComment(AddCommentRequest commentRequest, HttpServletRequest request);
+
 
 
 

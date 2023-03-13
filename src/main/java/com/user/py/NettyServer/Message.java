@@ -1,7 +1,7 @@
 package com.user.py.NettyServer;
 
 
-import com.user.py.mode.domain.vo.ChatRecordVo;
+import com.user.py.mode.entity.vo.ChatRecordVo;
 import lombok.Data;
 
 import java.io.Serializable;

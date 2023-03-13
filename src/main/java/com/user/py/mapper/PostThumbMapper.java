@@ -1,6 +1,6 @@
 package com.user.py.mapper;
 
-import com.user.py.mode.domain.PostThumb;
+import com.user.py.mode.entity.PostThumb;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

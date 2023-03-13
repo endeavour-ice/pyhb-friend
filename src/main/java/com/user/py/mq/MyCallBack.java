@@ -2,7 +2,7 @@ package com.user.py.mq;
 
 import com.google.gson.Gson;
 import com.user.py.listener.SaveMessageMq;
-import com.user.py.mode.domain.ChatRecord;
+import com.user.py.mode.entity.ChatRecord;
 import com.user.py.service.IChatRecordService;
 import com.user.py.utils.EmailUtil;
 import com.user.py.designPatten.singleton.GsonUtils;

@@ -93,7 +93,15 @@ public class RabbitMqConfig {
                                         @Qualifier("directExchange") DirectExchange directExchange) {
         return BindingBuilder.bind(ReadTeamQueue).to(directExchange).with(MqClient.READ_TEAM_KEY);
     }
-
+    @Bean("readChatQueue")
+    public Queue ReadChatQueue() {
+        return QueueBuilder.durable(MqClient.READ_CHAT_QUEUE).build();
+    }
+    @Bean
+    public Binding ReadChatQueueBinding(@Qualifier("readChatQueue") Queue readChatQueue,
+                                        @Qualifier("directExchange") DirectExchange directExchange) {
+        return BindingBuilder.bind(readChatQueue).to(directExchange).with(MqClient.READ_TEAM_KEY);
+    }
     @Bean("ossQueue")
     public Queue ossQueue() {
         return QueueBuilder.durable(MqClient.OSS_QUEUE).build();

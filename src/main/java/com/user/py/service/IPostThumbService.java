@@ -1,7 +1,7 @@
 package com.user.py.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.PostThumb;
+import com.user.py.mode.entity.PostThumb;
 
 /**
  * <p>

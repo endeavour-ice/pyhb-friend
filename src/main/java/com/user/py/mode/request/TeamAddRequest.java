@@ -3,7 +3,6 @@ package com.user.py.mode.request;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * @author ice
@@ -40,5 +39,5 @@ public class TeamAddRequest implements Serializable {
     /**
      * 过期时间
      */
-    private Date expireTime;
+    private String expireTime;
 }

@@ -1,12 +1,13 @@
 package com.user.py.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.vo.UserAvatarVo;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.vo.UserAvatarVo;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.mode.request.UpdateUserRequest;
 import com.user.py.mode.request.UserRegisterRequest;
 import com.user.py.mode.request.UserSearchTagAndTxtRequest;
+import com.user.py.mode.resp.SafetyUserResponse;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -77,7 +78,7 @@ public interface IUserService extends IService<User> {
      */
     int getUserByUpdateID( UpdateUserRequest updateUser,HttpServletRequest request);
 
-    List<UserVo> friendUserName(String userID, String friendUserName);
+    Map<String,Object> friendUserName(String userID, String friendUserName,Long num,Long size);
 
     Map<String, Object> selectPageIndexList(long current, long size);
 
@@ -111,4 +112,6 @@ public interface IUserService extends IService<User> {
     User forgetUserEmail(String email);
 
     List<UserAvatarVo>  getUserAvatarVoByIds(List list);
+
+    SafetyUserResponse getCurrent(User currentUser);
 }

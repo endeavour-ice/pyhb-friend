@@ -1,17 +1,10 @@
 package com.user.py.controller.PostController;
 
-import com.user.py.common.B;
-import com.user.py.common.ErrorCode;
-import com.user.py.exception.GlobalException;
-import com.user.py.mode.request.AddCommentRequest;
 import com.user.py.service.IPostCommentService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * <p>
@@ -24,17 +17,9 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/postComment")
 public class PostCommentController {
-    @Resource
-    private IPostCommentService commentService;
 
-    @PostMapping("/doComment")
-    public B<Boolean> doComment(@RequestBody AddCommentRequest commentRequest, HttpServletRequest request) {
-        if (commentRequest == null) {
-            throw new GlobalException(ErrorCode.NULL_ERROR);
-        }
-        boolean isCom= commentService.doComment(commentRequest, request);
-        return isCom ? B.ok() : B.error(ErrorCode.ERROR);
-    }
+
+
 
 
 

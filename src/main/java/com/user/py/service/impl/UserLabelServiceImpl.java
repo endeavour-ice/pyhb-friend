@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.UserLabelMapper;
-import com.user.py.mode.domain.UserLabel;
+import com.user.py.mode.entity.UserLabel;
 import com.user.py.mode.request.UserLabelRequest;
 import com.user.py.mode.resp.UserLabelResponse;
 import com.user.py.service.IUserLabelService;
@@ -57,16 +57,16 @@ public class UserLabelServiceImpl extends ServiceImpl<UserLabelMapper, UserLabel
      * @return
      */
     @Override
-    public List<String> getLabel(HttpServletRequest request) {
+    public Map<String,String> getLabel(HttpServletRequest request) {
         UserUtils.getLoginUser(request);
         List<UserLabel> list = this.list();
-
         if (CollectionUtils.isEmpty(list)) {
             return null;
         }
-        List<String> strings = new ArrayList<>();
-        list.forEach(userLabel -> strings.add(userLabel.getLabel()));
-        return strings;
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.stream().collect(Collectors.toMap(UserLabel::getId, UserLabel::getLabel));
     }
 
     @Override

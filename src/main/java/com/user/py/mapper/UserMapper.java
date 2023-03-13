@@ -2,9 +2,11 @@ package com.user.py.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.vo.UserAvatarVo;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.vo.UserAvatarVo;
+import com.user.py.mode.entity.vo.UserVo;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -19,4 +21,8 @@ import java.util.List;
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
     List<UserAvatarVo> getUserAvatarVoByIds(String ids);
+
+    long getUserCount();
+
+    List<UserVo> selectOrderByPage(@Param("pageNum") long pageNum, @Param("pageSize")long pageSize, @Param("userName")String userName);
 }

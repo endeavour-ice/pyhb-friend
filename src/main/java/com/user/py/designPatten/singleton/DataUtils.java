@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
  */
 public class DataUtils {
     private static volatile SimpleDateFormat sdf;
+    private static final SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
 
     // 防止反射破解
     private DataUtils() {
@@ -19,11 +20,12 @@ public class DataUtils {
             throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
         }
     }
+
     public static SimpleDateFormat getFdt() {
         if (sdf != null) {
             return sdf;
         }
-        synchronized (GsonUtils.class) {
+        synchronized (DataUtils.class) {
             if (sdf != null) {
                 return sdf;
             }
@@ -32,4 +34,7 @@ public class DataUtils {
         }
     }
 
+    public static SimpleDateFormat getSf() {
+        return sf;
+    }
 }

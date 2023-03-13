@@ -23,17 +23,17 @@ public class GlobalExceptionHeader {
     // TransientDataAccessResourceException
     @ExceptionHandler({GlobalException.class})
     public B<ErrorCode> businessExceptionHeader(GlobalException e) {
-        log.info(e.getMessage(),e.getCode(),e.getDescription(),e);
+        log.error(e.getMessage(),e.getCode(),e.getDescription(),e);
         return B.error(e.getCode(),e.getMessage(),e.getDescription());
     }
     @ExceptionHandler({RuntimeException.class,Exception.class})
     public B<ErrorCode> runExceptionHeader(Exception e) {
-        log.info("runException",e);
+        log.error("runException",e);
         return B.error(ErrorCode.SYSTEM_EXCEPTION.getCode(),ErrorCode.SYSTEM_EXCEPTION.getMessage(),"");
     }
     @ExceptionHandler({NoRouteToHostException.class})
     public B<ErrorCode> NoRouteToHostException(Exception e) {
-        log.info("NoRouteToHostException",e);
+        log.error("NoRouteToHostException",e);
         return B.error(ErrorCode.SYSTEM_EXCEPTION.getCode(),ErrorCode.SYSTEM_EXCEPTION.getMessage(),"连接异常请稍后。。。");
     }
 }

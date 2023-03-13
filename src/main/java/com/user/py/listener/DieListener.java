@@ -3,7 +3,7 @@ package com.user.py.listener;
 import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.user.py.designPatten.singleton.GsonUtils;
-import com.user.py.mode.domain.ChatRecord;
+import com.user.py.mode.entity.ChatRecord;
 import com.user.py.mq.AckMode;
 import com.user.py.mq.MqClient;
 import com.user.py.service.IChatRecordService;

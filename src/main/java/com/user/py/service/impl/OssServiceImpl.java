@@ -8,8 +8,8 @@ import com.user.py.common.ErrorCode;
 import com.user.py.designPatten.singleton.DataUtils;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.constant.RedisKey;
-import com.user.py.mode.domain.Team;
-import com.user.py.mode.domain.User;
+import com.user.py.mode.entity.Team;
+import com.user.py.mode.entity.User;
 import com.user.py.mode.utils.IpUtilSealUp;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
@@ -62,7 +62,6 @@ public class OssServiceImpl implements OssService {
      */
     @Override
     public String upload(MultipartFile file, User loginUser) {
-
         // 判断用户是否上传过
         String userId = loginUser.getId();
         RLock lock = redissonClient.getLock(RedisKey.redisFileAvatarLock+userId.intern());
@@ -76,7 +75,10 @@ public class OssServiceImpl implements OssService {
                 User user = new User();
                 user.setId(userId);
                 user.setAvatarUrl(url);
-                rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.OSS_KEY, user);
+                boolean updateById = userService.updateById(user);
+                if (!updateById) {
+                    throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+                }
                 Integer integer = TimeUtils.getRemainSecondsOneDay(new Date());
                 redisCache.setCacheObject(redisKey, new Date().toString(), integer, TimeUnit.SECONDS);
                 // 删除掉主页的用户
@@ -162,6 +164,7 @@ public class OssServiceImpl implements OssService {
         OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
 
         try {
+
             InputStream inputStream = file.getInputStream();
             // 创建PutObject请求。
             ossClient.putObject(bucketName, objectName, inputStream);

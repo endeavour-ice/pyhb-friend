@@ -7,10 +7,10 @@ import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.UserFriendReqMapper;
 import com.user.py.mode.constant.RedisKey;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.UserFriend;
-import com.user.py.mode.domain.UserFriendReq;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.UserFriend;
+import com.user.py.mode.entity.UserFriendReq;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
 import com.user.py.service.IUserFriendReqService;
@@ -57,8 +57,8 @@ public class UserFriendReqServiceImpl extends ServiceImpl<UserFriendReqMapper, U
             throw new GlobalException(ErrorCode.ERROR, "人员错误");
         }
         QueryWrapper<UserFriend> friendQueryWrapper = new QueryWrapper<>();
-        friendQueryWrapper.eq("user_id", userId).and(w -> w.eq("friends_id", toUserId))
-                .or().eq("user_id", toUserId).and(w -> w.eq("friends_id", userId));
+        friendQueryWrapper.eq("user_id", userId).and(w -> w.eq("friend_id", toUserId))
+                .or().eq("user_id", toUserId).and(w -> w.eq("friend_id", userId));
         long size = userFriendService.count(friendQueryWrapper);
         if (size > 0) {
             throw new GlobalException(ErrorCode.ERROR, "重复添加好友");

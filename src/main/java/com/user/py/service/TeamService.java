@@ -2,10 +2,12 @@ package com.user.py.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.Team;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.vo.TeamUserVo;
+import com.user.py.mode.entity.Team;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.vo.TeamUserAvatarVo;
+import com.user.py.mode.entity.vo.TeamUserVo;
 import com.user.py.mode.dto.TeamQuery;
+import com.user.py.mode.request.TeamAddRequest;
 import com.user.py.mode.request.TeamJoinRequest;
 import com.user.py.mode.request.TeamUpdateRequest;
 
@@ -25,7 +27,7 @@ public interface TeamService extends IService<Team> {
      * @param loginUser
      * @return
      */
-    String addTeam(Team team, User loginUser);
+    String addTeam(TeamAddRequest team, User loginUser);
 
     /**
      * 根据id删除队伍
@@ -72,7 +74,7 @@ public interface TeamService extends IService<Team> {
      * @param request 1
      * @return 200
      */
-    List<TeamUserVo> getJoinTeamList(HttpServletRequest request);
+    List<TeamUserAvatarVo> getJoinTeamList(HttpServletRequest request);
 
     /**
      * 根据id获取信息

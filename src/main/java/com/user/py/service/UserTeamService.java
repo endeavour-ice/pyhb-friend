@@ -1,8 +1,8 @@
 package com.user.py.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.UserTeam;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.UserTeam;
+import com.user.py.mode.entity.vo.UserVo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;

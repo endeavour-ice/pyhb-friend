@@ -2,7 +2,7 @@ package com.user.py.listener;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.user.py.mapper.MessageMqMapper;
-import com.user.py.mode.domain.MessageMq;
+import com.user.py.mode.entity.MessageMq;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.stereotype.Component;

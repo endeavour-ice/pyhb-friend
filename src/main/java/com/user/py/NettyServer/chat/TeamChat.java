@@ -2,7 +2,7 @@ package com.user.py.NettyServer.chat;
 
 import com.user.py.NettyServer.Message;
 import com.user.py.NettyServer.UserChannelMap;
-import com.user.py.mode.domain.TeamChatRecord;
+import com.user.py.mode.entity.TeamChatRecord;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
 import com.user.py.service.TeamService;

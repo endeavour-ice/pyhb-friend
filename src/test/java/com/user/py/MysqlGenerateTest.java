@@ -27,11 +27,11 @@ public class MysqlGenerateTest {
                 })
                 .packageConfig(builder -> {
                     builder.parent("com.user.py") // 设置父包名
-                            .moduleName("comment_reply") // 设置父包模块名
+                            .moduleName("post_collect") // 设置父包模块名
                             .pathInfo(Collections.singletonMap(OutputFile.xml, "D:\\JavaUser\\pyhb-friend\\src\\main\\java\\com\\user\\py")); // 设置mapperXml生成路径
                 })
                 .strategyConfig(builder -> {
-                    builder.addInclude("comment_reply");
+                    builder.addInclude("post_collect");
                 // 设置需要生成的表名
                              // 设置过滤表前缀
                 })

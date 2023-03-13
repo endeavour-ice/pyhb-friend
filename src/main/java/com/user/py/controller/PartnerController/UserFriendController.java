@@ -4,8 +4,8 @@ package com.user.py.controller.PartnerController;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.mode.request.AddFriendUSerUser;
 import com.user.py.mode.resp.FriendUserResponse;
 import com.user.py.service.IUserFriendReqService;
@@ -106,11 +106,8 @@ public class UserFriendController {
      */
     @GetMapping("/selectFriendList")
     public B<List<User>> selectFriendList(HttpServletRequest request) {
-
         User user = UserUtils.getLoginUser(request);
         String userId = user.getId();
-
-
         List<User> userList = friendService.selectFriend(userId);
 
         return B.ok(userList);

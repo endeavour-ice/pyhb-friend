@@ -2,7 +2,7 @@ package com.user.py.controller.OssController;
 
 import com.user.py.annotation.CurrentLimiting;
 import com.user.py.common.B;
-import com.user.py.mode.domain.User;
+import com.user.py.mode.entity.User;
 import com.user.py.service.OssService;
 import com.user.py.utils.ResponseEmail;
 import com.user.py.utils.UserUtils;

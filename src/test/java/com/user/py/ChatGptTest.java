@@ -10,6 +10,6 @@ import com.user.py.utils.ChatGptUtils;
 public class ChatGptTest {
 
     public static void main(String[] args) throws Exception {
-        System.out.println(ChatGptUtils.sendChatG("你是什么？"));
+        System.out.println(ChatGptUtils.sendChatG("你好"));
     }
 }

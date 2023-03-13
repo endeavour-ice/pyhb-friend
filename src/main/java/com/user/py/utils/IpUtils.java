@@ -43,7 +43,9 @@ public class IpUtils {
                 InetAddress iNet;
                 try {
                     iNet = InetAddress.getLocalHost();
-                    if (iNet != null) ip = iNet.getHostAddress();
+                    if (iNet != null) {
+                        ip = iNet.getHostAddress();
+                    }
                 } catch (UnknownHostException e) {
                     e.printStackTrace();
                 }

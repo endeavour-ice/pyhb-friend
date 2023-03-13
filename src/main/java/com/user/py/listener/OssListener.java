@@ -2,7 +2,7 @@ package com.user.py.listener;
 
 import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
-import com.user.py.mode.domain.User;
+import com.user.py.mode.entity.User;
 import com.user.py.mq.MqClient;
 import com.user.py.service.IUserService;
 import com.user.py.designPatten.singleton.GsonUtils;

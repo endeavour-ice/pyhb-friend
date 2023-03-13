@@ -5,25 +5,27 @@ package com.user.py.mq;
  * @date 2022/8/20 15:49
  */
 
-public class MqClient {
+public interface MqClient {
     // 普通
-    public static final String DIRECT_EXCHANGE = "exchange_direct";
-    public static final String NETTY_QUEUE = "netty_queue";
-    public static final String NETTY_KEY = "netty";
-    public static final String REDIS_QUEUE = "redis_queue";
-    public static final String REDIS_KEY = "redis_key";
-    public static final String TEAM_QUEUE = "team_queue";
-    public static final String TEAM_KEY = "team_key";
-    public static final String READ_TEAM_QUEUE = "read_team_queue";
-    public static final String READ_TEAM_KEY = "read_team_key";
-    public static final String OSS_QUEUE = "oss_queue";
-    public static final String OSS_KEY = "oss_key";
+    String NETTY_QUEUE = "netty_queue";
+    String NETTY_KEY = "netty";
+    String REDIS_QUEUE = "redis_queue";
+    String DIRECT_EXCHANGE = "exchange_direct";
+    String REDIS_KEY = "redis_key";
+    String TEAM_QUEUE = "team_queue";
+    String TEAM_KEY = "team_key";
+    String READ_TEAM_QUEUE = "read_team_queue";
+    String READ_TEAM_KEY = "read_team_key";
+    String READ_CHAT_QUEUE = "read_chat_queue";
+    String READ_CHAT_KEY = "read_chat_key";
+    String OSS_QUEUE = "oss_queue";
+    String OSS_KEY = "oss_key";
     // 删除 redis key
-    public static final String REMOVE_REDIS_QUEUE = "removeRedisByQueue";
-    public static final String REMOVE_REDIS_KEY = "removeRedisByKey";
+    String REMOVE_REDIS_QUEUE = "removeRedisByQueue";
+    String REMOVE_REDIS_KEY = "removeRedisByKey";
 
     // 死信
-    public static final String DIE_EXCHANGE ="exchange_die";
-    public static final String DIE_QUEUE = "die_queue";
-    public static final String DIE_KEY ="die_key";
+    String DIE_EXCHANGE = "exchange_die";
+    String DIE_QUEUE = "die_queue";
+    String DIE_KEY = "die_key";
 }

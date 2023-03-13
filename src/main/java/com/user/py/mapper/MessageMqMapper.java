@@ -1,7 +1,7 @@
 package com.user.py.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.user.py.mode.domain.MessageMq;
+import com.user.py.mode.entity.MessageMq;
 
 /**
  * @Author ice

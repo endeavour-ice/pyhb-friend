@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.user.py.mapper.PostMapper">
-    <resultMap id="getPostComment" type="com.user.py.mode.domain.vo.CommentVo">
+    <resultMap id="getPostComment" type="com.user.py.mode.entity.vo.CommentVo">
         <!--private String postId;
     private String commentName;
     private String content;
@@ -21,13 +21,67 @@
         s.user_account AS reopyName
         FROM
         post_comment p
-         JOIN `user` u ON p.user_id = u.id
-         JOIN `user` s ON p.reply_id = s.id
+        JOIN `user` u ON p.user_id = u.id
+        left JOIN `user` s ON p.reply_id = s.id
         <where>
             <if test="postIds !=null and postIds.size()>0">
                 <foreach collection="postIds" item="postId" separator="," open="p.post_id in (" close=")">
                     #{postId}
                 </foreach>
+            </if>
+        </where>
+    </select>
+    <resultMap id="indexPost" type="com.user.py.mode.entity.vo.PostVo">
+        <id property="id" column="pid"/>
+        <result property="content" column="content"/>
+        <result property="thumb" column="thumb_num"/>
+        <result property="collect" column="collect_num"/>
+        <result property="tag" column="tag"/>
+        <collection property="userAvatarVo" ofType="com.user.py.mode.entity.vo.UserAvatarVo">
+            <id property="id" column="uid"/>
+            <result property="username" column="username"/>
+            <result property="avatarUrl" column="avatarUrl"/>
+        </collection>
+    </resultMap>
+    <select id="selectIndexByPage" resultMap="indexPost">
+        select p.id           as pid,
+               p.content,
+               p.thumb_num,
+               p.collect_num,
+               u.id           as uid,
+               u.user_account as username,
+               u.avatar_url   as avatarUrl,
+               p.tags         as tag
+        from post as p
+                 join `user` as u on p.user_id = u.id
+            <if test="sorted!=null and sorted==3">
+                order by p.thumb_num desc
+            </if>
+            limit #{pageNum}
+           , #{pageSize}
+    </select>
+    <select id="selectCountById" resultType="java.lang.Integer">
+        select count(id)
+        from post;
+    </select>
+
+    <resultMap id="CollectThumb" type="com.user.py.mode.entity.vo.CollectThumbVo">
+        <result column="thumbPostId" property="thumbPostId"/>
+        <result column="collectPostId" property="collectPostId"/>
+
+    </resultMap>
+    <select id="selectCTByPostIds"  resultMap="CollectThumb">
+        select pt.post_id as thumbPostId, pc.post_id as collectPostId
+        from post_thumb as pt
+                 left join post_collect as pc on pt.post_id = pc.post_id
+        <where>
+            <if test="postIds!=null and postIds.size()>0">
+                <foreach collection="postIds" item="postId" separator="," open="pt.post_id in (" close=")">
+                    #{postId}
+                </foreach>
+            </if>
+            <if test="userId!=null and userId!=''">
+                and pt.user_id=#{userId}
             </if>
         </where>
     </select>

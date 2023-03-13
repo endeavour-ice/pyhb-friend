@@ -4,17 +4,16 @@ package com.user.py.controller.PartnerController;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
-import com.user.py.mode.domain.Team;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.vo.TeamUserVo;
 import com.user.py.mode.dto.TeamQuery;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.vo.TeamUserAvatarVo;
+import com.user.py.mode.entity.vo.TeamUserVo;
 import com.user.py.mode.request.TeamAddRequest;
 import com.user.py.mode.request.TeamJoinRequest;
 import com.user.py.mode.request.TeamUpdateRequest;
 import com.user.py.mode.request.UserTeamQuitRequest;
 import com.user.py.service.TeamService;
 import com.user.py.utils.UserUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -46,9 +45,7 @@ public class TeamController {
         }
 
         User loginUser = UserUtils.getLoginUser(request);
-        Team team = new Team();
-        BeanUtils.copyProperties(teamAddRequest,team);
-        String userID = teamService.addTeam(team, loginUser);
+        String userID = teamService.addTeam(teamAddRequest, loginUser);
         if (!StringUtils.hasText(userID)) {
             return B.error(ErrorCode.PARAMS_ERROR,"队伍保存失败");
         }
@@ -115,10 +112,10 @@ public class TeamController {
      * @param request 1
      * @return 200
      */
-    @GetMapping("/Check")
-    public B<List<TeamUserVo>> getJoinTeamList(HttpServletRequest request) {
-        List<TeamUserVo> list=teamService.getJoinTeamList(request);
-        return B.ok(list);
+    @GetMapping("/check")
+    public B<List<TeamUserAvatarVo>> getJoinTeamList(HttpServletRequest request) {
+        List<TeamUserAvatarVo> joinTeamList = teamService.getJoinTeamList(request);
+        return B.ok(joinTeamList);
     }
 
     /**

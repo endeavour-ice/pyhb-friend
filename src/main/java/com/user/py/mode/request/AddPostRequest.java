@@ -14,9 +14,6 @@ import java.io.Serializable;
 public class AddPostRequest implements Serializable {
     private static final long serialVersionUID = 1578557702138636466L;
 
-    @ApiModelProperty("创建用户 id")
-    private String userId;
-
     @ApiModelProperty("内容")
     private String content;
 

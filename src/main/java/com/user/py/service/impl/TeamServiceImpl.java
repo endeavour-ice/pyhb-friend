@@ -3,16 +3,19 @@ package com.user.py.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.user.py.common.ErrorCode;
+import com.user.py.designPatten.singleton.DataUtils;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.TeamMapper;
 import com.user.py.mode.constant.RedisKey;
-import com.user.py.mode.domain.Team;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.UserTeam;
-import com.user.py.mode.domain.vo.TeamUserVo;
-import com.user.py.mode.domain.vo.UserVo;
 import com.user.py.mode.dto.TeamQuery;
+import com.user.py.mode.entity.Team;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.UserTeam;
+import com.user.py.mode.entity.vo.TeamUserAvatarVo;
+import com.user.py.mode.entity.vo.TeamUserVo;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.mode.enums.TeamStatusEnum;
+import com.user.py.mode.request.TeamAddRequest;
 import com.user.py.mode.request.TeamJoinRequest;
 import com.user.py.mode.request.TeamUpdateRequest;
 import com.user.py.service.ITeamChatRecordService;
@@ -33,6 +36,7 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -89,14 +93,28 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     }
 
     @Override
-    public String addTeam(Team team, User loginUser) {
+    public String addTeam(TeamAddRequest team, User loginUser) {
         RLock lock = redissonClient.getLock(RedisKey.redisAddTeamLock);
         try {
             if (lock.tryLock(0, 3000, TimeUnit.MILLISECONDS)) {
-                return getAddTeam(team, loginUser);
+                Team tm = new Team();
+                tm.setId(tm.getId());
+                tm.setName(team.getName());
+                tm.setDescription(team.getDescription());
+                tm.setMaxNum(team.getMaxNum());
+                tm.setPassword(team.getPassword());
+                tm.setStatus(team.getStatus());
+                String expireTime = team.getExpireTime();
+
+                if (StringUtils.hasText(expireTime)) {
+                    SimpleDateFormat fdt = DataUtils.getSf();
+                    Date date = fdt.parse(expireTime);
+                    tm.setExpireTime(date);
+                }
+                return getAddTeam(tm, loginUser);
             }
             return "";
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION, "加锁失败");
         } finally {
             if (lock.isHeldByCurrentThread()) {
@@ -305,26 +323,27 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
      * @return 200
      */
     @Override
-    public List<TeamUserVo> getJoinTeamList(HttpServletRequest request) {
+    public List<TeamUserAvatarVo> getJoinTeamList(HttpServletRequest request) {
         if (request == null) {
-            throw new GlobalException(ErrorCode.NO_LOGIN);
+            return null;
         }
-        User user = UserUtils.getLoginUser(request);
+
+        User user;
+        try {
+            user = UserUtils.getLoginUser(request);
+        } catch (Exception e) {
+            return null;
+        }
         String userId = user.getId();
-        QueryWrapper<UserTeam> wrapper = new QueryWrapper<>();
-        wrapper.eq("user_id", userId);
-        List<UserTeam> list = userTeamService.list(wrapper);
-        ArrayList<TeamUserVo> userVos = new ArrayList<>();
-        list.forEach(userTeam -> {
-            String teamId = userTeam.getTeamId();
-            Team team = this.getById(teamId);
-            TeamUserVo teamUserVo = new TeamUserVo();
-            BeanUtils.copyProperties(userTeam, teamUserVo);
-            teamUserVo.setDescription(team.getDescription());
-            teamUserVo.setUserId(team.getUserId());
-            userVos.add(teamUserVo);
-        });
-        return userVos;
+        List<TeamUserAvatarVo> userAvatarVos = baseMapper.selectJoinTeamUserList(userId);
+        for (TeamUserAvatarVo userAvatarVo : userAvatarVos) {
+            String voUserId = userAvatarVo.getUserId();
+            if (userId.equals(voUserId)) {
+                userAvatarVo.setCaptain(true);
+            }
+            userAvatarVo.setUserId(null);
+        }
+        return userAvatarVos;
     }
 
     /**

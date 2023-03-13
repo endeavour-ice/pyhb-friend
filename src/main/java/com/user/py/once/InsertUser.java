@@ -1,6 +1,6 @@
 package com.user.py.once;
 
-import com.user.py.mode.domain.User;
+import com.user.py.mode.entity.User;
 import com.user.py.mapper.UserMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;

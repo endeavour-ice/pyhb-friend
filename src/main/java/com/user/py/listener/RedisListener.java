@@ -29,37 +29,28 @@ public class RedisListener {
     private RedisCache redisCache;
     @Resource
     private SaveMessageMq saveMessageMq;
+
     @RabbitListener(queues = MqClient.REMOVE_REDIS_QUEUE)
     public void removeRedisByKey(Message message, Channel channel, String redisKey) {
         MessageProperties messageProperties = message.getMessageProperties();
         long deliveryTag = messageProperties.getDeliveryTag();
-        if (saveMessageMq.saveMessage(message)) {
-            if (StringUtils.hasText(redisKey)) {
-                if (redisCache.hasKey(redisKey)) {
-                    boolean delete = redisCache.deleteObject(redisKey);
-                    if (delete) {
-                        log.info("删除redis =>  key: {} 成功",redisKey);
-                    }else {
-                        log.error("删除redis =>  key: {} 失败",redisKey);
-                    }
+        if (StringUtils.hasText(redisKey)) {
+            if (redisCache.hasKey(redisKey)) {
+                boolean delete = redisCache.deleteObject(redisKey);
+                if (delete) {
+                    log.info("删除redis =>  key: {} 成功", redisKey);
+                } else {
+                    log.error("删除redis =>  key: {} 失败", redisKey);
                 }
-            } else {
-                log.error("删除redis的key为空");
             }
-            try {
-                channel.basicAck(deliveryTag, false);
-            } catch (IOException e) {
-                log.error("接受失败: "+e.getMessage());
-                saveMessageMq.saveMessage(message, e.getMessage());
-            }
-        }else {
-            try {
-                channel.basicAck(deliveryTag, false);
-            } catch (IOException ignored) {
-
-            }
-            log.error("消息重复消费，消息ID: "+message.getMessageProperties().getMessageId());
+        } else {
+            log.error("删除redis的key为空");
         }
-
+        try {
+            channel.basicAck(deliveryTag, false);
+        } catch (IOException e) {
+            log.error("接受失败: " + e.getMessage());
+            saveMessageMq.saveMessage(message, e.getMessage());
+        }
     }
 }

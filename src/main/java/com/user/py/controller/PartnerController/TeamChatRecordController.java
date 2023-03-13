@@ -2,7 +2,7 @@ package com.user.py.controller.PartnerController;
 
 
 import com.user.py.common.B;
-import com.user.py.mode.domain.TeamChatRecord;
+import com.user.py.mode.entity.TeamChatRecord;
 import com.user.py.service.ITeamChatRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

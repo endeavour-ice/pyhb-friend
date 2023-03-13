@@ -2,7 +2,7 @@ package com.user.py.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.user.py.mode.domain.UserNotice;
+import com.user.py.mode.entity.UserNotice;
 
 /**
  * <p>

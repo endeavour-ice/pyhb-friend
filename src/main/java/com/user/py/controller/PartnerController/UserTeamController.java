@@ -2,7 +2,7 @@ package com.user.py.controller.PartnerController;
 
 
 import com.user.py.common.B;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.service.UserTeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

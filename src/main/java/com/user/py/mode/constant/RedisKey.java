@@ -24,6 +24,7 @@ public interface RedisKey {
     String redisForgetCode = "redisRegisterCode:";
 
     String redisPostList = "redisPostList";
+    String userTotal = "userTotal";
 
-
+    String postTotal = "postTotal";
 }

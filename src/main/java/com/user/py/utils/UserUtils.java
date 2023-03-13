@@ -1,17 +1,15 @@
 package com.user.py.utils;
 
-import com.user.py.mode.domain.User;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.mode.resp.SafetyUserResponse;
-import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 import static com.user.py.mode.constant.UserConstant.ADMIN_ROLE;
-import static com.user.py.mode.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * @author ice
@@ -26,10 +24,6 @@ public class UserUtils {
      */
     public  static User getLoginUser(HttpServletRequest request) {
         if (request == null) {
-            throw new GlobalException(ErrorCode.NO_LOGIN);
-        }
-        String token = (String) request.getSession().getAttribute(USER_LOGIN_STATE);
-        if (!StringUtils.hasText(token)) {
             throw new GlobalException(ErrorCode.NO_LOGIN);
         }
         User user = JwtUtils.getMemberIdByJwtToken(request);

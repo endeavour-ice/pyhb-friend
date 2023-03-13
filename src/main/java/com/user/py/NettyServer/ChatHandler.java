@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.user.py.NettyServer.chat.Chat;
 import com.user.py.designPatten.factory.ChatFactory;
 import com.user.py.designPatten.singleton.GsonUtils;
-import com.user.py.mode.domain.vo.ChatRecordVo;
+import com.user.py.mode.entity.vo.ChatRecordVo;
 import com.user.py.utils.SensitiveUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;

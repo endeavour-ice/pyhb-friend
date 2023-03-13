@@ -2,7 +2,7 @@ package com.user.py.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.user.py.mapper.UserNoticeMapper;
-import com.user.py.mode.domain.UserNotice;
+import com.user.py.mode.entity.UserNotice;
 import com.user.py.service.IUserNoticeService;
 import org.springframework.stereotype.Service;
 

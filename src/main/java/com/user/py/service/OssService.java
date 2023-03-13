@@ -1,6 +1,6 @@
 package com.user.py.service;
 
-import com.user.py.mode.domain.User;
+import com.user.py.mode.entity.User;
 import com.user.py.utils.ResponseEmail;
 import org.springframework.web.multipart.MultipartFile;
 

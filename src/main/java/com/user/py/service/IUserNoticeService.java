@@ -2,7 +2,7 @@ package com.user.py.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.UserNotice;
+import com.user.py.mode.entity.UserNotice;
 
 /**
  * <p>

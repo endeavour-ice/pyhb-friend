@@ -7,9 +7,9 @@ import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.UserFriendMapper;
 import com.user.py.mode.constant.RedisKey;
-import com.user.py.mode.domain.ChatRecord;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.UserFriend;
+import com.user.py.mode.entity.ChatRecord;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.UserFriend;
 import com.user.py.mode.resp.FriendUserResponse;
 import com.user.py.mq.MqClient;
 import com.user.py.mq.RabbitService;
@@ -59,7 +59,7 @@ public class UserFriendServiceImpl extends ServiceImpl<UserFriendMapper, UserFri
 
         UserFriend userFriend = new UserFriend();
         userFriend.setUserId(userId);
-        userFriend.setFriendsId(reqId);
+        userFriend.setFriendId(reqId);
         int insert = baseMapper.insert(userFriend);
         if (insert <= 0) {
             throw new RuntimeException("添加好友失败");
@@ -76,7 +76,7 @@ public class UserFriendServiceImpl extends ServiceImpl<UserFriendMapper, UserFri
             return userRedisList;
         }
         QueryWrapper<UserFriend> wrapper = new QueryWrapper<>();
-        wrapper.eq("user_id", userId).or().eq("friends_id", userId);
+        wrapper.eq("user_id", userId).or().eq("friend_id", userId);
         List<UserFriend> userFriends = baseMapper.selectList(wrapper);
         if (CollectionUtils.isEmpty(userFriends)) {
             return null;
@@ -84,9 +84,9 @@ public class UserFriendServiceImpl extends ServiceImpl<UserFriendMapper, UserFri
         List<String> userIdByList = new ArrayList<>();
         userFriends.forEach(userFriend -> {
             if (userFriend.getUserId().equals(userId)) {
-                userIdByList.add(userFriend.getFriendsId());
+                userIdByList.add(userFriend.getFriendId());
             }
-            if (userFriend.getFriendsId().equals(userId)) {
+            if (userFriend.getFriendId().equals(userId)) {
                 userIdByList.add(userFriend.getUserId());
             }
         });
@@ -151,8 +151,8 @@ public class UserFriendServiceImpl extends ServiceImpl<UserFriendMapper, UserFri
 
     private UserFriend  getUserFriendByFriendId(String friendId,String userId) {
         QueryWrapper<UserFriend> wrapper = new QueryWrapper<>();
-        wrapper.eq("user_id", userId).and(q -> q.eq("friends_id", friendId)).
-                or().eq("user_id", friendId).and(q -> q.eq("friends_id", userId));
+        wrapper.eq("user_id", userId).and(q -> q.eq("friend_id", friendId)).
+                or().eq("user_id", friendId).and(q -> q.eq("friend_id", userId));
         return this.getOne(wrapper);
     }
 }

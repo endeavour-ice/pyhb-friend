@@ -2,8 +2,8 @@ package com.user.py.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.user.py.mode.domain.UserFriendReq;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.UserFriendReq;
+import com.user.py.mode.entity.vo.UserVo;
 
 import java.util.List;
 

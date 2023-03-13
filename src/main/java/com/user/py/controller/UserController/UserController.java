@@ -6,10 +6,9 @@ import com.user.py.annotation.CurrentLimiting;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
-import com.user.py.mode.constant.UserStatus;
-import com.user.py.mode.domain.User;
-import com.user.py.mode.domain.UserFriend;
-import com.user.py.mode.domain.vo.UserVo;
+import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.UserFriend;
+import com.user.py.mode.entity.vo.UserVo;
 import com.user.py.mode.request.*;
 import com.user.py.mode.resp.SafetyUserResponse;
 import com.user.py.mq.RabbitService;
@@ -60,7 +59,7 @@ public class UserController {
         if (StringUtils.hasText(aLong)) {
             UserFriend userFriend = new UserFriend();
             userFriend.setUserId(aLong);
-            userFriend.setFriendsId("1");
+            userFriend.setFriendId("1");
             boolean saveFriend = friendService.save(userFriend);
         }
         return B.ok(aLong);
@@ -78,13 +77,8 @@ public class UserController {
         if (currentUser == null) {
             throw new GlobalException(ErrorCode.NO_LOGIN);
         }
-        String id = currentUser.getId();
-        User user = userService.getById(id);
-        if (user.getUserStatus().equals(UserStatus.LOCKING)) {
-            throw new GlobalException(ErrorCode.NO_AUTH, "该用户以锁定...");
-        }
+        SafetyUserResponse safetyUser = userService.getCurrent(currentUser);
         // 进行脱敏
-        SafetyUserResponse safetyUser = UserUtils.getSafetyUserResponse(user);
         return B.ok(safetyUser);
     }
 
@@ -123,9 +117,9 @@ public class UserController {
 
     // 管理员删除用户
     @PostMapping("/delete")
-    public B<Boolean> deleteUser(@RequestBody UserIdRequest userIdRequest, HttpServletRequest request) {
+    public B<Boolean> deleteUser(@RequestBody IdRequest idRequest, HttpServletRequest request) {
         String ids;
-        if (userIdRequest == null || !StringUtils.hasText(ids=userIdRequest.getId())) {
+        if (idRequest == null || !StringUtils.hasText(ids = idRequest.getId())) {
             return B.error(ErrorCode.NULL_ERROR);
         }
         int id = Integer.parseInt(ids);
@@ -200,16 +194,19 @@ public class UserController {
     }
 
     // 搜索用户
-    @GetMapping("/searchUserName")
-    public B<List<UserVo>> searchUserName(@RequestParam(required = false) String friendUserName,
-                                        HttpServletRequest request) {
+    @PostMapping("/searchUserName")
+    public B<Map<String, Object>> searchUserName(@RequestBody UserSearchPage userSearchPage,
+                                          HttpServletRequest request) {
         User user = UserUtils.getLoginUser(request);
         String userId = user.getId();
-        List<UserVo> friendList = userService.friendUserName(userId, friendUserName);
-        if (friendList.size() == 0) {
-            return B.error(ErrorCode.NULL_ERROR);
+        if (userSearchPage == null) {
+            throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
-        return B.ok(friendList);
+        String userName = userSearchPage.getUserName();
+        long pageNum = userSearchPage.getPageNum();
+        long pageSize = userSearchPage.getPageSize();
+        Map<String, Object> friendMap = userService.friendUserName(userId, userName,  pageNum, pageSize);
+        return B.ok(friendMap);
     }
 
     /**
