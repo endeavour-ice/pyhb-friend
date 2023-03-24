@@ -1,9 +1,9 @@
 package com.user.py.designPatten.factory;
 
-import com.user.py.designPatten.postFilter.FilterBase.ArticleFilterInterFace;
-import com.user.py.designPatten.postFilter.FilterBase.IArticleFilter;
-import com.user.py.designPatten.postFilter.NumberOrderPostFilter;
-import com.user.py.designPatten.postFilter.SensitivePostFilter;
+import com.user.py.designPatten.filter.article.FilterBase.ArticleFilterInterFace;
+import com.user.py.designPatten.filter.article.FilterBase.IArticleFilter;
+import com.user.py.designPatten.filter.article.NumberOrderPostFilter;
+import com.user.py.designPatten.filter.article.SensitivePostFilter;
 
 import java.util.ArrayList;
 import java.util.HashMap;

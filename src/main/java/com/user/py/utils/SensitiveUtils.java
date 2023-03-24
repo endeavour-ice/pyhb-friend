@@ -3,6 +3,7 @@ package com.user.py.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
+import sun.misc.Resource;
 import toolgood.words.StringSearch;
 
 import java.io.BufferedReader;
@@ -30,7 +31,7 @@ public class SensitiveUtils implements ApplicationListener<ContextRefreshedEvent
      * @return
      */
     public static String sensitive(String text) throws Exception {
-        URL url = Thread.currentThread().getContextClassLoader().getResource("static/mg.txt");
+        URL url = Resource.class.getResource("static/mg.txt");
         if (url == null) {
             return text;
         }

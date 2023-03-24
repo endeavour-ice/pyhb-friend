@@ -26,6 +26,7 @@ import java.util.Date;
 @Slf4j
 public class ChatGptChat implements Chat {
     private static final RabbitService rabbitService = SpringUtilObject.getBean(RabbitService.class);
+
     @Override
     public void doChat(Message message, ChannelHandlerContext cxt) {
         ChatRecordVo chatRecord = message.getChatRecord();
@@ -42,13 +43,9 @@ public class ChatGptChat implements Chat {
         record.setMessage(recordMessage);
         record.setSendTime(DataUtils.getFdt().format(new Date()));
         String toMess;
-        try {
-            rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
-            toMess = ChatGptUtils.sendChatG(mess);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            toMess = "I don't know";
-        }
+
+        rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
+        toMess = ChatGptUtils.sendChatGpt(chatRecord.getUserId(),mess);
         record.setMessage(toMess);
         record.setUserId(sendId);
         record.setFriendId(userId);

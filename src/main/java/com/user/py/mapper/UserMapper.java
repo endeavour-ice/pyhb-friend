@@ -24,5 +24,12 @@ public interface UserMapper extends BaseMapper<User> {
 
     long getUserCount();
 
-    List<UserVo> selectOrderByPage(@Param("pageNum") long pageNum, @Param("pageSize")long pageSize, @Param("userName")String userName);
+    List<UserVo> selectFindByUserAccountLikePage(@Param("pageNum") long pageNum, @Param("pageSize")long pageSize, @Param("userName")String userName);
+
+
+    UserVo selectByNameLike(@Param("name") String name);
+
+    List<UserVo> selectUserVoList(@Param("current") long current, @Param("size") long size, @Param("status") int status);
+
+    int saveFriend(@Param("id")String id,@Param("userId") String userId,@Param("friendId") String friendId);
 }

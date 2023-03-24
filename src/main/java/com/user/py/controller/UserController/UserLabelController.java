@@ -1,7 +1,9 @@
 package com.user.py.controller.UserController;
 
 
+import com.user.py.annotation.AuthSecurity;
 import com.user.py.common.B;
+import com.user.py.mode.enums.UserRole;
 import com.user.py.mode.request.UserLabelRequest;
 import com.user.py.mode.resp.UserLabelResponse;
 import com.user.py.service.IUserLabelService;
@@ -56,6 +58,7 @@ public class UserLabelController {
     }
 
     @GetMapping("/delUserLabel")
+    @AuthSecurity(isNoRole = {UserRole.TEST})
     public B<Boolean> delUserLabel(@RequestParam("id")String id, HttpServletRequest request) {
         boolean isDelete= labelService.delUserLabel(id,request);
         if (!isDelete) {

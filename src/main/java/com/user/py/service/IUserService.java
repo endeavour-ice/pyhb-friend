@@ -4,9 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.user.py.mode.entity.User;
 import com.user.py.mode.entity.vo.UserAvatarVo;
 import com.user.py.mode.entity.vo.UserVo;
-import com.user.py.mode.request.UpdateUserRequest;
-import com.user.py.mode.request.UserRegisterRequest;
-import com.user.py.mode.request.UserSearchTagAndTxtRequest;
+import com.user.py.mode.request.*;
 import com.user.py.mode.resp.SafetyUserResponse;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +29,7 @@ public interface IUserService extends IService<User> {
      * @param userRegisterRequest   账户
      * @return 返回id值
      */
-    String userRegister(UserRegisterRequest userRegisterRequest);
+    void userRegister(UserRegisterRequest userRegisterRequest);
 
     /**
      * 用户登录
@@ -40,7 +38,7 @@ public interface IUserService extends IService<User> {
      * @param password    密码
      * @return 用户信息
      */
-    UserVo userLogin(String userAccount, String password , HttpServletRequest request);
+    UserVo userLogin(String userAccount, String password ,String code,String uuid, HttpServletRequest request);
 
 
     /**
@@ -76,13 +74,12 @@ public interface IUserService extends IService<User> {
      * @param request
      * @return 4
      */
-    int getUserByUpdateID( UpdateUserRequest updateUser,HttpServletRequest request);
+    UserVo getUserByUpdateID( UpdateUserRequest updateUser,HttpServletRequest request);
 
-    Map<String,Object> friendUserName(String userID, String friendUserName,Long num,Long size);
+    Map<String,Object> friendUserName(User user, UserSearchPage userSearchPage);
 
     Map<String, Object> selectPageIndexList(long current, long size);
 
-    Map<String, Object> searchUser(HttpServletRequest request, String username, Long current, Long size);
 
     /**
      * 根据单个标签搜索用户
@@ -113,5 +110,8 @@ public interface IUserService extends IService<User> {
 
     List<UserAvatarVo>  getUserAvatarVoByIds(List list);
 
-    SafetyUserResponse getCurrent(User currentUser);
+    SafetyUserResponse getCurrent(HttpServletRequest request);
+
+
+    UserVo getUserVoByNameOrId(IdNameRequest idNameRequest, User loginUser);
 }

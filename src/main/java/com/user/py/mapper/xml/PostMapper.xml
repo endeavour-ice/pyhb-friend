@@ -6,23 +6,28 @@
     private String commentName;
     private String content;
     private String replyName;-->
+        <result property="commentId" column="comment_id"/>
         <result property="postId" column="postId"/>
-        <result property="commentName" column="commentName"/>
         <result property="content" column="content"/>
-        <result property="replyName" column="replyName"/>
-
+        <result property="createTime" column="createTime"/>
+        <association property="owner" javaType="com.user.py.mode.entity.vo.PostUserVo">
+            <result property="id" column="user_id"/>
+            <result property="avatarUrl" column="avatar_url"/>
+            <result property="username" column="user_account"/>
+        </association>
     </resultMap>
     <!--CommentVo getPostCommentByPostIds(@Param("postIds")List<String> postIds);-->
     <select id="getPostCommentByPostIds" parameterType="java.util.List" resultMap="getPostComment">
         SELECT
+        p.id AS comment_id,
         p.post_id AS postId,
         p.content,
-        u.user_account AS commentName,
-        s.user_account AS reopyName
+        p.create_time as createTime,
+        u.user_account AS user_account,
+        u.id AS user_id, u.avatar_url AS avatar_url
         FROM
-        post_comment p
-        JOIN `user` u ON p.user_id = u.id
-        left JOIN `user` s ON p.reply_id = s.id
+        post_comment as p
+        JOIN `user` as u ON p.user_id = u.id
         <where>
             <if test="postIds !=null and postIds.size()>0">
                 <foreach collection="postIds" item="postId" separator="," open="p.post_id in (" close=")">
@@ -30,51 +35,76 @@
                 </foreach>
             </if>
         </where>
+
+
     </select>
-    <resultMap id="indexPost" type="com.user.py.mode.entity.vo.PostVo">
+    <resultMap id="postVo" type="com.user.py.mode.entity.vo.PostVo">
         <id property="id" column="pid"/>
         <result property="content" column="content"/>
         <result property="thumb" column="thumb_num"/>
         <result property="collect" column="collect_num"/>
         <result property="tag" column="tag"/>
-        <collection property="userAvatarVo" ofType="com.user.py.mode.entity.vo.UserAvatarVo">
+        <result property="createTime" column="create_time"/>
+        <collection property="postUserVo" ofType="com.user.py.mode.entity.vo.PostUserVo">
             <id property="id" column="uid"/>
             <result property="username" column="username"/>
             <result property="avatarUrl" column="avatarUrl"/>
         </collection>
     </resultMap>
-    <select id="selectIndexByPage" resultMap="indexPost">
-        select p.id           as pid,
-               p.content,
-               p.thumb_num,
-               p.collect_num,
-               u.id           as uid,
-               u.user_account as username,
-               u.avatar_url   as avatarUrl,
-               p.tags         as tag
+    <sql id="postVoSql">
+        p
+        .
+        id
+        as pid,
+        p.content,
+        p.thumb_num ,
+        p.collect_num,
+        u.id as uid,
+        u.user_account as username,
+        u.avatar_url as avatarUrl,
+        p.tags as tag,
+        p.create_time as create_time
+    </sql>
+    <select id="selectPostByUserOrderPage" resultMap="postVo">
+        select
+        <include refid="postVoSql"/>
         from post as p
-                 join `user` as u on p.user_id = u.id
-            <if test="sorted!=null and sorted==3">
-                order by p.thumb_num desc
-            </if>
-            limit #{pageNum}
-           , #{pageSize}
+        join `user` as u on p.user_id = u.id
+        where p.is_delete=0
+        <if test="userId !=null and userId!=''">
+            and p.user_id=#{userId}
+        </if>
+        <if test="sorted!=null and sorted==3">
+            order by p.thumb_num desc
+        </if>
+        <if test="sorted!=null and sorted==1">
+            order by p.create_time desc
+        </if>
+        <if test="sorted !=null and sorted==0">
+            order by p.create_time asc
+        </if>
+        limit #{pageNum}
+        , #{pageSize}
     </select>
     <select id="selectCountById" resultType="java.lang.Integer">
         select count(id)
-        from post;
+        from post
+        where is_delete=0
+        <if test="userId!=null and userId!=''">
+            and user_id = #{userId}
+        </if>
     </select>
 
     <resultMap id="CollectThumb" type="com.user.py.mode.entity.vo.CollectThumbVo">
         <result column="thumbPostId" property="thumbPostId"/>
         <result column="collectPostId" property="collectPostId"/>
-
     </resultMap>
-    <select id="selectCTByPostIds"  resultMap="CollectThumb">
+    <select id="selectCTByPostIds" resultMap="CollectThumb">
         select pt.post_id as thumbPostId, pc.post_id as collectPostId
         from post_thumb as pt
-                 left join post_collect as pc on pt.post_id = pc.post_id
+        left join post_collect as pc on pt.post_id = pc.post_id
         <where>
+
             <if test="postIds!=null and postIds.size()>0">
                 <foreach collection="postIds" item="postId" separator="," open="pt.post_id in (" close=")">
                     #{postId}
@@ -83,6 +113,58 @@
             <if test="userId!=null and userId!=''">
                 and pt.user_id=#{userId}
             </if>
+
         </where>
     </select>
+    <resultMap id="postUserVo" type="com.user.py.mode.entity.vo.PostUserVo">
+        <result property="id" column="user_id"/>
+        <result property="thumbTotal" column="thumbTotal"/>
+        <result property="postTotal" column="postTotal"/>
+        <result property="joinTime" column="joinTime"/>
+
+    </resultMap>
+    <select id="selectPostThumbTotal" resultMap="postUserVo">
+        SELECT
+        p.user_id,
+        sum( p.thumb_num ) as thumbTotal,
+        COUNT( p.user_id ) as postTotal,
+        DATEDIFF(NOW(), u.create_time) as joinTime
+        FROM
+        post p
+        JOIN `user` u ON p.user_id = u.id
+        WHERE p.is_delete=0
+        <if test="userIdList!=null and userIdList.size()>0">
+            <foreach collection="userIdList" item="userId" separator="," open="and p.user_id in (" close=")">
+                #{userId}
+            </foreach>
+        </if>
+        GROUP BY
+        user_id
+    </select>
+    <select id="selectPostUserOrderById" resultMap="postVo">
+        select
+        <include refid="postVoSql"/>
+        from post as p
+        join `user` as u on p.user_id = u.id
+        where p.is_delete=0 and p.id=#{id}
+    </select>
+    <select id="selectPostCollectByUserId" resultMap="postVo">
+        <if test="userId!=null and userId!=''">
+            select
+            p.id as pid,
+            p.content
+            from post_collect as pc join post as p on pc.post_id=p.id where pc.user_id=#{userId} and p.is_delete=0
+        </if>
+    </select>
+    <select id="searchContent" resultMap="postVo">
+        select id as pid, content  from post where content like   #{content}"%" and is_delete=0
+    </select>
+    <select id="searchUser" resultMap="postVo">
+        select id as pid, content
+        from post
+        where user_id = #{userId}
+          and is_delete = 0;
+
+    </select>
+
 </mapper>

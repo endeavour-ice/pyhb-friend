@@ -42,6 +42,9 @@ spring:
     port: 5672
     publisher-confirm-type: correlated
     publisher-returns: true
+
+
+
 server:
   port: 8080
   address: 0.0.0.0
@@ -59,8 +62,6 @@ mybatis-plus:
       logic-delete-value: 1 # 逻辑已删除值(默认为 1)
       logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
 
-
-
 aliyun:
   oss:
     file:
@@ -70,7 +71,7 @@ aliyun:
       bucketname: bing-edu
 email:
   fromEmail: verification_ice@qq.com
-  password: yfjebidgptbpecff
+  password: epkpjdtspfxxebae
 
 chatGpt:
   token: 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

@@ -2,13 +2,14 @@ package com.user.py.listener;
 
 import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
+import com.user.py.designPatten.singleton.GsonUtils;
 import com.user.py.mode.entity.ChatRecord;
 import com.user.py.mode.entity.TeamChatRecord;
 import com.user.py.mq.AckMode;
 import com.user.py.mq.MqClient;
 import com.user.py.service.IChatRecordService;
 import com.user.py.service.ITeamChatRecordService;
-import com.user.py.designPatten.singleton.GsonUtils;
+import com.user.py.utils.SensitiveUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -44,6 +45,14 @@ public class NettyListener {
             Gson gson = GsonUtils.getGson();
             ChatRecord chatRecord = gson.fromJson(new String(message.getBody(), StandardCharsets.UTF_8), ChatRecord.class);
             if (chatRecord != null) {
+                String mes = chatRecord.getMessage();
+                try {
+                    mes= SensitiveUtils.sensitive(mes);
+                } catch (Exception e) {
+                    log.error("过滤失败！！");
+                }
+
+                chatRecord.setMessage(mes);
                 boolean save = chatRecordService.save(chatRecord);
                 if (!save) {
                     saveMessageMq.saveMessage(message, "保存聊天记录失败");

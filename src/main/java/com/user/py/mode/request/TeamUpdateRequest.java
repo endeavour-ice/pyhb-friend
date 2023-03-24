@@ -1,6 +1,7 @@
 package com.user.py.mode.request;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -9,14 +10,12 @@ import java.util.Date;
  * @author ice
  * @date 2022/8/23 12:46
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class TeamUpdateRequest implements Serializable {
+public class TeamUpdateRequest extends IdRequest implements Serializable{
 
     private static final long serialVersionUID = 7722073575347437133L;
-    /**
-     * 队伍的id
-     */
-    private String id;
+
     /**
      * 队伍的名称
      */

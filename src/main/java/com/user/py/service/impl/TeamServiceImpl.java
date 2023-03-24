@@ -6,7 +6,7 @@ import com.user.py.common.ErrorCode;
 import com.user.py.designPatten.singleton.DataUtils;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.TeamMapper;
-import com.user.py.mode.constant.RedisKey;
+import com.user.py.mode.constant.CacheConstants;
 import com.user.py.mode.dto.TeamQuery;
 import com.user.py.mode.entity.Team;
 import com.user.py.mode.entity.User;
@@ -94,7 +94,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
 
     @Override
     public String addTeam(TeamAddRequest team, User loginUser) {
-        RLock lock = redissonClient.getLock(RedisKey.redisAddTeamLock);
+        RLock lock = redissonClient.getLock(CacheConstants.REDIS_ADD_TEAM_LOCK);
         try {
             if (lock.tryLock(0, 3000, TimeUnit.MILLISECONDS)) {
                 Team tm = new Team();

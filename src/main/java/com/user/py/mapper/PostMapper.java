@@ -2,9 +2,7 @@ package com.user.py.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.user.py.mode.entity.Post;
-import com.user.py.mode.entity.vo.CollectThumbVo;
-import com.user.py.mode.entity.vo.CommentVo;
-import com.user.py.mode.entity.vo.PostVo;
+import com.user.py.mode.entity.vo.*;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Collection;
@@ -21,9 +19,18 @@ import java.util.List;
 public interface PostMapper extends BaseMapper<Post> {
     List<CommentVo> getPostCommentByPostIds(@Param("postIds") Collection<String> postIds);
 
-    List<PostVo> selectIndexByPage(@Param("pageNum") long pageNum, @Param("pageSize") long pageSize,@Param("sorted") int sorted);
+    List<PostVo> selectPostByUserOrderPage(@Param("pageNum") long pageNum, @Param("pageSize") long pageSize, @Param("sorted") int sorted,@Param("userId")String userId);
 
-    int selectCountById();
+    List<PostUserVo> selectPostThumbTotal(@Param("userIdList") Collection<String> userIdList);
+    int selectCountById(@Param("userId") String userId);
 
     List<CollectThumbVo> selectCTByPostIds(@Param("postIds")Collection<String> postIds,@Param("userId") String userId);
+
+
+    PostVo selectPostUserOrderById(@Param("id") String postId);
+
+    List<PostVo> selectPostCollectByUserId(@Param("userId") String userId);
+
+    List<PostVo> searchContent(@Param("content") String content);
+    List<PostVo> searchUser(@Param("userId") String userId);
 }

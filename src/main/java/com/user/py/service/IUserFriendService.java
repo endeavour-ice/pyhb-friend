@@ -4,6 +4,9 @@ package com.user.py.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.user.py.mode.entity.User;
 import com.user.py.mode.entity.UserFriend;
+import com.user.py.mode.entity.vo.UserVo;
+import com.user.py.mode.request.AddFriendUSerUser;
+import com.user.py.mode.request.RejectRequest;
 import com.user.py.mode.resp.FriendUserResponse;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,11 +21,7 @@ import java.util.List;
  * @since 2022-07-28
  */
 public interface IUserFriendService extends IService<UserFriend> {
-    /**
-     * 接收好友请求
-     * @param reqId
-     */
-    void addFriendReq(String reqId,String userId);
+
 
     /**
      * 查找好友
@@ -40,4 +39,10 @@ public interface IUserFriendService extends IService<UserFriend> {
      * @return
      */
     boolean delFriendUser(String friendId, String userId);
+
+    Long sendRequest(String fromUserId, AddFriendUSerUser toUserId);
+
+    List<UserVo> checkFriend(String userId);
+
+    boolean reject(RejectRequest rejectRequest, String userId);
 }

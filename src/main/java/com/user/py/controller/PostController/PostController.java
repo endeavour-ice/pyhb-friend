@@ -1,12 +1,13 @@
 package com.user.py.controller.PostController;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.user.py.annotation.AuthSecurity;
 import com.user.py.annotation.CurrentLimiting;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.entity.User;
 import com.user.py.mode.entity.vo.PostVo;
+import com.user.py.mode.enums.UserRole;
 import com.user.py.mode.request.*;
 import com.user.py.service.IPostService;
 import com.user.py.utils.UserUtils;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,34 +41,32 @@ public class PostController {
             throw new GlobalException(ErrorCode.NULL_ERROR, "数据为空");
         }
         User loginUser = UserUtils.getLoginUser(request);
-        Boolean isSave=postService.addPost(postRequest, loginUser,file);
+        Boolean isSave = postService.addPost(postRequest, loginUser, file);
         return B.ok(isSave);
     }
+
     @PostMapping("/getPost")
-    public B<Page<PostVo>> getPostList(HttpServletRequest request,@RequestBody PostPageRequest postPageRequest) {
-        Page<PostVo> postList = postService.getPostList(postPageRequest, request);
+    public B<Map<String,Object>> getPostList(HttpServletRequest request, @RequestBody PostPageRequest postPageRequest) {
+        Map<String,Object> postList = postService.getPostList(postPageRequest, request);
         return B.ok(postList);
     }
-    @PostMapping("/getPost/user")
-    public B<Map<String, Object>> getPostListByUser(HttpServletRequest request, @RequestBody PostPageRequest postPageRequest) {
-        Map<String, Object> postList = postService.getPostListByUser(postPageRequest, request);
-        return B.ok(postList);
-    }
-    @GetMapping("/remove/{id}")
-    public B<Boolean> removePost(@PathVariable String id, HttpServletRequest request) {
-        if (!StringUtils.hasText(id)) {
+    @GetMapping ("/get")
+    public B<PostVo> getPostById(HttpServletRequest request,@RequestParam String postId) {
+        User loginUser = UserUtils.getLoginUser(request);
+        if (!StringUtils.hasText(postId)) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = UserUtils.getLoginUser(request);
-        boolean is =postService.removePostByID(id, loginUser);
-        return B.ok(is);
+        PostVo post = postService.getPost(postId,loginUser);
+        return B.ok(post);
     }
 
+    @GetMapping("/col")
+    public B<Map<String, String>> getPostByCollection(HttpServletRequest request) {
+        Map<String,String> map= postService.getPostByCollection(request);
+        return B.ok(map);
+    }
     /**
      * 帖子点赞
-     * @param postDoThumbRequest
-     * @param request
-     * @return
      */
     @PostMapping("/doThumb")
     @CurrentLimiting
@@ -78,8 +78,10 @@ public class PostController {
         boolean isDo = postService.doThumb(postId, request);
         return isDo ? B.ok() : B.error(ErrorCode.ERROR);
     }
+
     /**
      * 帖子收藏
+     *
      * @param postDoThumbRequest
      * @param request
      * @return
@@ -94,16 +96,18 @@ public class PostController {
         boolean isDo = postService.doCollect(postId, request);
         return isDo ? B.ok() : B.error(ErrorCode.ERROR);
     }
+
     @PostMapping("/doComment")
     public B<Boolean> doComment(@RequestBody AddCommentRequest commentRequest, HttpServletRequest request) {
         if (commentRequest == null) {
             throw new GlobalException(ErrorCode.NULL_ERROR);
         }
-        boolean isCom= postService.doComment(commentRequest, request);
+        boolean isCom = postService.doComment(commentRequest, request);
         return isCom ? B.ok() : B.error(ErrorCode.ERROR);
     }
-    // TODO 收藏的增删改查   这里要进行表字段的添加和创建
+
     @PostMapping("/delPost")
+    @AuthSecurity(isNoRole = {UserRole.TEST})
     public B<Boolean> delPost(@RequestBody IdRequest idRequest, HttpServletRequest request) {
         if (idRequest == null) {
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
@@ -112,5 +116,32 @@ public class PostController {
         boolean isPost = postService.delPost(id, request);
         return B.ok(isPost);
     }
+    @GetMapping("/collect")
+    public B<List<PostVo>> getPostByCollect(HttpServletRequest request) {
+        List<PostVo> isPost = postService.getPostByCollect(request);
+        return B.ok(isPost);
+    }
+    @PostMapping("/search")
+    public B<List<PostVo>> searchPost(@RequestBody SearchPostRequest searchPostRequest,HttpServletRequest request) {
+        if (searchPostRequest == null) {
+            throw new GlobalException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = UserUtils.getLoginUser(request);
+        List<PostVo> postVoList = postService.searchPost(searchPostRequest, loginUser);
+        return B.ok(postVoList);
+    }
 
+    /**
+     * 删除评论
+     * @param commRequest
+     * @return
+     */
+    @PostMapping("/del")
+    public B<Boolean> delComment(@RequestBody DelCommRequest commRequest,HttpServletRequest request) {
+        if (commRequest == null) {
+            throw new GlobalException(ErrorCode.PARAMS_ERROR);
+        }
+       boolean is= postService.delComment(commRequest, request);
+        return B.ok(is);
+    }
 }

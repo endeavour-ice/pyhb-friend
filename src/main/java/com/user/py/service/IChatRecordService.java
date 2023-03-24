@@ -3,8 +3,7 @@ package com.user.py.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.user.py.mode.entity.ChatRecord;
-
-import java.util.List;
+import com.user.py.mode.entity.vo.ChatList;
 
 /**
  * <p>
@@ -23,5 +22,5 @@ public interface IChatRecordService extends IService<ChatRecord> {
      * @param friendId 朋友id
      * @return 集合
      */
-    List<ChatRecord> selectAllList(String userId, String friendId);
+    ChatList selectAllList(String userId, String friendId);
 }

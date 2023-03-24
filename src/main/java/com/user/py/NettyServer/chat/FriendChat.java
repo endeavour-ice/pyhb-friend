@@ -35,16 +35,10 @@ public class FriendChat implements Chat{
         record.setFriendId(chatRecord.getSendId());
         record.setMessage(chatRecord.getMessage());
         record.setSendTime(DataUtils.getFdt().format(new Date()));
+        record.setHasRead(0);
         if (channel != null) {
-            record.setHasRead(1);
-            rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
             channel.writeAndFlush(new TextWebSocketFrame(GsonUtils.getGson().toJson(mess)));
-        } else {
-            // 用户不在线 保存到数据库
-            record.setHasRead(0);
-            // 调用 Rabbit 保存信息
-            rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
-            // 不在线,暂时不发送
         }
+        rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.NETTY_KEY, record);
     }
 }

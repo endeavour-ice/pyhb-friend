@@ -20,6 +20,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan("com.user")
 public class ServiceMainApplication {
     public static void main(String[] args) {
+        System.setProperty("es.set.netty.runtime.available.processors", "false");
         SpringApplication.run(ServiceMainApplication.class, args);
     }
 }

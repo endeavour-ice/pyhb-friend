@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.user.py.mapper.UserFriendMapper">
-
+    <resultMap id="check" type="com.user.py.mode.entity.UserFriendReq">
+        <id property="id" column="id"/>
+        <result property="fromUserid" column="from_userid"/>
+        <result property="toUserid" column="to_userid"/>
+        <result property="message" column="message"/>
+        <result property="userStatus" column="user_status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    <delete id="removeFromToUserId">
+        delete from user_friend_req where from_userid=#{fromUserId} and to_userid=#{toUserId}
+    </delete>
+    <select id="selectCheckFriend" resultMap="check" >
+        select id,from_userid,to_userid,message,user_status,create_time from user_friend_req where to_userid=#{toUserId}
+    </select>
+    <select id="countFromToUserId" resultType="java.lang.Integer">
+        select count(id) from user_friend_req where from_userid=#{fromUserId} and to_userid=#{toUserId}
+    </select>
 </mapper>

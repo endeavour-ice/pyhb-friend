@@ -1,6 +1,5 @@
 package com.user.py.controller.PostController;
 
-import com.user.py.service.IPostThumbService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +14,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/postThumb")
 public class PostThumbController {
-    private IPostThumbService thumbService;
-
 
 }

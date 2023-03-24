@@ -29,7 +29,7 @@ public class Post implements Serializable {
 
     private static final long serialVersionUID = 8664786476499747747L;
     @ApiModelProperty("id")
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private String id;
 
     @ApiModelProperty("创建用户 id")

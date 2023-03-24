@@ -3,7 +3,7 @@ package com.user.py.exception;
 
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,7 +17,7 @@ import java.net.NoRouteToHostException;
  */
 // 错误处理器,默认在这里
 @RestControllerAdvice
-@Log4j2
+@Slf4j
 public class GlobalExceptionHeader {
     // ExceptionHandlerExceptionResolver
     // TransientDataAccessResourceException

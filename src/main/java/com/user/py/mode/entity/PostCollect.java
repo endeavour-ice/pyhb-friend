@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 public class PostCollect implements Serializable {
     private static final long serialVersionUID = 8639595421388166573L;
     @ApiModelProperty("id")
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private String id;
 
     @ApiModelProperty("帖子 id")

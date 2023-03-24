@@ -1,5 +1,7 @@
 package com.user.py.mode.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -29,6 +31,7 @@ public class UserFriend implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @ApiModelProperty("id")
+    @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
     @ApiModelProperty("用户id")

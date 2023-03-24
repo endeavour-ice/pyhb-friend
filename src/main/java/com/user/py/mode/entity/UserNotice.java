@@ -2,6 +2,7 @@ package com.user.py.mode.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -39,6 +40,7 @@ public class UserNotice implements Serializable {
     private Integer region;
 
     @ApiModelProperty("是否删除")
+    @TableLogic
     private Integer isDelete;
 
     @ApiModelProperty("创建时间")

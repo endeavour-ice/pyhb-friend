@@ -1,20 +1,20 @@
 package com.user.py.controller.PartnerController;
 
 
+import com.user.py.annotation.AuthSecurity;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.entity.User;
 import com.user.py.mode.entity.vo.UserVo;
+import com.user.py.mode.enums.UserRole;
 import com.user.py.mode.request.AddFriendUSerUser;
+import com.user.py.mode.request.RejectRequest;
 import com.user.py.mode.resp.FriendUserResponse;
-import com.user.py.service.IUserFriendReqService;
 import com.user.py.service.IUserFriendService;
 import com.user.py.utils.UserUtils;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,72 +31,45 @@ import java.util.List;
 @RestController
 @RequestMapping("/partner/friend/userFriend")
 //@CrossOrigin(origins = {"http://localhost:7777"}, allowCredentials = "true")
-@Log4j2
+@Slf4j
 public class UserFriendController {
     @Autowired
     private IUserFriendService friendService;
-    @Autowired
-    private IUserFriendReqService friendReqService;
 
 
     // 添加好友
-    @PostMapping("/friendUser")
-    @Transactional
-    public B<String> friendRequest(@RequestBody AddFriendUSerUser addFriendUSerUser, HttpServletRequest request) {
+    @PostMapping("/friend")
+    public B<Long> friendRequest(@RequestBody AddFriendUSerUser addFriendUSerUser, HttpServletRequest request) {
         if (addFriendUSerUser == null) {
             throw new GlobalException(ErrorCode.NULL_ERROR);
         }
-        String id = addFriendUSerUser.getToUserId();
+
         User loginUser = UserUtils.getLoginUser(request);
         String userId = loginUser.getId();
-        friendReqService.sendRequest(userId, id);
-        return B.ok();
+        Long aLong = friendService.sendRequest(userId, addFriendUSerUser);
+        return B.ok(aLong);
     }
 
 
     // 查看好友申请
-    @GetMapping("/checkFriend")
+    @GetMapping("/check")
     public B<List<UserVo>> CheckFriendRequests(HttpServletRequest request) {
         User user = UserUtils.getLoginUser(request);
         String userId = user.getId();
-        List<UserVo> users = friendReqService.checkFriend(userId);
+        List<UserVo> users = friendService.checkFriend(userId);
         return B.ok(users);
     }
 
     /**
-     * 拒绝好友 TODO 将接受好友合并
-     * @param id
+     * 接受和拒绝好友
+     *
+     * @param rejectRequest
      * @return
      */
-    @GetMapping("/rejectFriend")
-    public B<Integer> rejectFriend(@RequestParam(required = false) String id) {
-        log.info("拒绝好友");
-        if (!StringUtils.hasLength(id)) {
-            return B.error(ErrorCode.NULL_ERROR);
-        }
-        int i = friendReqService.Reject(id);
-        if (i <= 0) {
-            return B.error(ErrorCode.SYSTEM_EXCEPTION);
-        }
-        return B.ok(i);
-    }
-
-
-    /**
-     * 接收好友请求
-     */
-    @GetMapping("/acceptFriendReq")
-    public B<String> acceptFriendReq(@RequestParam(required = false) String reqId, HttpServletRequest request) {
-
-        User user = UserUtils.getLoginUser(request);
-        int reject = friendReqService.Reject(reqId);
-        if (reject <= 0) {
-            throw new GlobalException(ErrorCode.PARAMS_ERROR, "添加好友失败");
-        }
-        String userId = user.getId();
-        friendService.addFriendReq(reqId, userId);
-
-
+    @PostMapping("/reject")
+    public B<Boolean> rejectFriend(@RequestBody(required = false) RejectRequest rejectRequest, HttpServletRequest request) {
+        User loginUser = UserUtils.getLoginUser(request);
+        boolean i = friendService.reject(rejectRequest, loginUser.getId());
         return B.ok();
     }
 
@@ -104,7 +77,7 @@ public class UserFriendController {
     /**
      * 查找好友
      */
-    @GetMapping("/selectFriendList")
+    @GetMapping("/select")
     public B<List<User>> selectFriendList(HttpServletRequest request) {
         User user = UserUtils.getLoginUser(request);
         String userId = user.getId();
@@ -128,7 +101,8 @@ public class UserFriendController {
     /**
      * 删除好友
      */
-    @GetMapping("/delFriendUser")
+    @GetMapping("/del")
+    @AuthSecurity(isNoRole = {UserRole.TEST})
     public B<Boolean> delFriendUser(@RequestParam("friendId") String friendId, HttpServletRequest request) {
         User loginUser = UserUtils.getLoginUser(request);
         String userId = loginUser.getId();

@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 
 public interface OssService {
-    String upload(MultipartFile file, User loginUser);
+    String upload(MultipartFile file,HttpServletRequest request);
 
     String upFileByTeam(MultipartFile file, User loginUser, String teamID);
 

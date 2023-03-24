@@ -1,6 +1,7 @@
 package com.user.py.controller.PartnerController;
 
 
+import com.user.py.annotation.AuthSecurity;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
@@ -8,6 +9,7 @@ import com.user.py.mode.dto.TeamQuery;
 import com.user.py.mode.entity.User;
 import com.user.py.mode.entity.vo.TeamUserAvatarVo;
 import com.user.py.mode.entity.vo.TeamUserVo;
+import com.user.py.mode.enums.UserRole;
 import com.user.py.mode.request.TeamAddRequest;
 import com.user.py.mode.request.TeamJoinRequest;
 import com.user.py.mode.request.TeamUpdateRequest;
@@ -59,6 +61,7 @@ public class TeamController {
      * @return
      */
     @PostMapping("/delete")
+    @AuthSecurity(isNoRole = {UserRole.TEST})
     public B<Boolean> deleteTeamById(@RequestBody(required = false) String teamId,HttpServletRequest request) {
         if (!StringUtils.hasText(teamId)) {
             throw new GlobalException(ErrorCode.NULL_ERROR);
@@ -100,7 +103,7 @@ public class TeamController {
      * @param request is
      * @return 200
      */
-    @GetMapping("/list")
+    @GetMapping("/search")
     public B<List<TeamUserVo>> getTeamList(TeamQuery teamQuery, HttpServletRequest request) {
         boolean admin = UserUtils.isAdmin(request);
         List<TeamUserVo> resultPage = teamService.getTeamList(teamQuery,admin);

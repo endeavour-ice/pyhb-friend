@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 
 import static com.user.py.mode.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -40,32 +39,9 @@ public class JwtUtils {
                 .compact();
     }
 
-    public static void main(String[] args) {
-        User user = new User();
-        user.setId("");
-        user.setUsername("user");
-        user.setUserAccount("ice");
-        user.setAvatarUrl("");
-        user.setGender("");
-        user.setPassword("");
-        user.setTags("");
-        user.setProfile("");
-        user.setTel("");
-        user.setEmail("");
-        user.setUserStatus(0);
-        user.setRole(0);
-        user.setPlanetCode("");
-        user.setIsDelete(0);
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
-        String jwtToken = getJwtToken(user);
-        getMemberIdByJwtToken(jwtToken);
-    }
-
     /**
      * 根据token获取用户
      *
-     * @param request
      * @return
      */
     public static User getMemberIdByJwtToken(HttpServletRequest request) {
@@ -76,7 +52,7 @@ public class JwtUtils {
             }
             return getMemberIdByJwtToken(jwtToken);
         } catch (Exception e) {
-            throw new GlobalException(ErrorCode.NO_LOGIN);
+            return null;
         }
     }
     public static User getMemberIdByJwtToken(String token) {
@@ -91,7 +67,7 @@ public class JwtUtils {
             return gson.fromJson(userString, User.class);
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new GlobalException(ErrorCode.NO_LOGIN);
+            return null;
         }
     }
 

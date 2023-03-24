@@ -7,7 +7,7 @@ import com.aliyun.oss.OSSClientBuilder;
 import com.user.py.common.ErrorCode;
 import com.user.py.designPatten.singleton.DataUtils;
 import com.user.py.exception.GlobalException;
-import com.user.py.mode.constant.RedisKey;
+import com.user.py.mode.constant.CacheConstants;
 import com.user.py.mode.entity.Team;
 import com.user.py.mode.entity.User;
 import com.user.py.mode.utils.IpUtilSealUp;
@@ -30,6 +30,8 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+
+import static com.user.py.mode.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * @author ice
@@ -57,20 +59,21 @@ public class OssServiceImpl implements OssService {
      * 用户头像的上传
      *
      * @param file      上传的文件
-     * @param loginUser 登录的用户
+     * @param request 登录的用户
      * @return 返回url
      */
     @Override
-    public String upload(MultipartFile file, User loginUser) {
+    public String upload(MultipartFile file, HttpServletRequest request) {
+        User loginUser = UserUtils.getLoginUser(request);
         // 判断用户是否上传过
         String userId = loginUser.getId();
-        RLock lock = redissonClient.getLock(RedisKey.redisFileAvatarLock+userId.intern());
+        RLock lock = redissonClient.getLock(CacheConstants.REDIS_FILE_AVATAR_LOCK +userId.intern());
         try {
             if (lock.tryLock(0, 3000, TimeUnit.MILLISECONDS)) {
                 if (file == null) {
                     throw new GlobalException(ErrorCode.NULL_ERROR);
                 }
-                String redisKey = RedisKey.ossAvatarUserRedisKey + userId;
+                String redisKey = CacheConstants.OSS_AVATAR_USER_REDIS_KEY + userId;
                 String url = getUrl(redisKey, file);
                 User user = new User();
                 user.setId(userId);
@@ -81,8 +84,14 @@ public class OssServiceImpl implements OssService {
                 }
                 Integer integer = TimeUtils.getRemainSecondsOneDay(new Date());
                 redisCache.setCacheObject(redisKey, new Date().toString(), integer, TimeUnit.SECONDS);
+                if (!StringUtils.hasText(url)) {
+                    throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+                }
+                loginUser.setAvatarUrl(url);
+                String token = JwtUtils.getJwtToken(loginUser);
+                request.getSession().setAttribute(USER_LOGIN_STATE, token);
                 // 删除掉主页的用户
-                rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.REMOVE_REDIS_KEY, RedisKey.redisIndexKey);
+                rabbitService.sendMessage(MqClient.DIRECT_EXCHANGE, MqClient.REMOVE_REDIS_KEY, CacheConstants.REDIS_INDEX_KEY);
                 return url;
             }
         } catch (InterruptedException e) {
@@ -107,7 +116,7 @@ public class OssServiceImpl implements OssService {
     public String upFileByTeam(MultipartFile file, User loginUser, String teamID) {
 
         String userId = loginUser.getId();
-        RLock lock = redissonClient.getLock(RedisKey.redisFileByTeamAvatarLock + userId.intern());
+        RLock lock = redissonClient.getLock(CacheConstants.REDIS_FILE_BY_TEAM_AVATAR_LOCK + userId.intern());
         try {
             if (lock.tryLock(0, 3000, TimeUnit.MILLISECONDS)) {
                 if (file == null || !StringUtils.hasText(teamID)) {
@@ -121,7 +130,7 @@ public class OssServiceImpl implements OssService {
                 if (!userId.equals(teamUserId)) {
                     throw new GlobalException(ErrorCode.NO_AUTH, "权限不足...");
                 }
-                String redisKey = RedisKey.ossAvatarTeamRedisKey + teamID;
+                String redisKey = CacheConstants.OSS_AVATAR_TEAM_REDIS_KEY + teamID;
                 String url = getUrl(redisKey, file);
                 team.setAvatarUrl(url);
                 boolean teamByTeam = teamService.updateTeamByTeam(team);
@@ -189,7 +198,7 @@ public class OssServiceImpl implements OssService {
     @Override
     public boolean sendForgetEMail(ResponseEmail responseEmail, HttpServletRequest request) {
         String id = request.getSession().getId();
-        RLock lock = redissonClient.getLock(RedisKey.redisFileByForgetLock+id.intern());
+        RLock lock = redissonClient.getLock(CacheConstants.REDIS_FILE_BY_FORGET_LOCK +id.intern());
         try {
             if (lock.tryLock(0, 3000, TimeUnit.MILLISECONDS)) {
                 // 获取真实ip
@@ -227,7 +236,7 @@ public class OssServiceImpl implements OssService {
                 if (!sendQQEmail) {
                     throw new GlobalException(ErrorCode.PARAMS_ERROR, "发送失败请重试");
                 }
-                String redisKey = RedisKey.redisForgetCode + email;
+                String redisKey = CacheConstants.REDIS_FORGET_CODE + email;
                 return redisCache.setCacheObject(redisKey, code, 60, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
@@ -249,7 +258,7 @@ public class OssServiceImpl implements OssService {
     @Override
     public boolean sendRegisterEMail(ResponseEmail responseEmail, HttpServletRequest request) {
         String id = request.getSession().getId();
-        RLock lock = redissonClient.getLock(RedisKey.redisFileByRegisterLock+id.intern());
+        RLock lock = redissonClient.getLock(CacheConstants.REDIS_FILE_BY_REGISTER_LOCK +id.intern());
         try {
             if (lock.tryLock(0, 3000, TimeUnit.MILLISECONDS)) {
                 // 获取真实ip
@@ -260,7 +269,7 @@ public class OssServiceImpl implements OssService {
                 }
                 email = email.toLowerCase();
                 String code = getCode(email);
-                String redisKey = RedisKey.redisRegisterCode + email;
+                String redisKey = CacheConstants.REDIS_REGISTER_CODE + email;
                 return redisCache.setCacheObject(redisKey, code, 60, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
@@ -283,7 +292,7 @@ public class OssServiceImpl implements OssService {
     @Override
     public boolean sendBinDingEMail(ResponseEmail responseEmail, HttpServletRequest request) {
         String id = request.getSession().getId();
-        RLock lock = redissonClient.getLock(RedisKey.redisFileByBingDingLock+id.intern());
+        RLock lock = redissonClient.getLock(CacheConstants.REDIS_FILE_BY_BING_DING_LOCK +id.intern());
         try {
             if (lock.tryLock(0, 3000, TimeUnit.MILLISECONDS)) {
                 // 获取真实ip
@@ -305,7 +314,7 @@ public class OssServiceImpl implements OssService {
                 }
                 email = email.toLowerCase();
                 String code = getCode(email);
-                String redisKey = RedisKey.redisFileByBingDingKey + email;
+                String redisKey = CacheConstants.REDIS_FILE_BY_BING_DING_KEY + email;
                 return redisCache.setCacheObject(redisKey, code, 60, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
@@ -371,10 +380,10 @@ public class OssServiceImpl implements OssService {
         Integer num = redisCache.getCacheObject(ipAddress);
         if (num != null) {
             // 一天的次数过多
-            if (num >= 10 && num < 20) {
+            if (num >= 3 && num < 5) {
                 redisCache.increment(ipAddress);
-                throw new GlobalException(ErrorCode.PARAMS_ERROR, "请求次数过多，今天还剩余" + (20 - num - 1) + "次");
-            } else if (num >= 20) {
+                throw new GlobalException(ErrorCode.PARAMS_ERROR, "请求次数过多，今天还剩余" + (5 - num - 1) + "次");
+            } else if (num >= 5) {
                 IpUtilSealUp.addIpList(ipAddress);
                 throw new GlobalException(ErrorCode.PARAMS_ERROR, "请求次数过多,请明天再试");
             } else {

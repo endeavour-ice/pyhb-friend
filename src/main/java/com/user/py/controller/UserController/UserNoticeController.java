@@ -1,10 +1,12 @@
 package com.user.py.controller.UserController;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.user.py.annotation.AuthSecurity;
 import com.user.py.common.B;
 import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.entity.UserNotice;
+import com.user.py.mode.enums.UserRole;
 import com.user.py.service.IUserNoticeService;
 import com.user.py.utils.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +64,7 @@ public class UserNoticeController {
     }
 
     @PostMapping ("/updateNotice")
+    @AuthSecurity(isNoRole = {UserRole.TEST})
     public B<Boolean> updateNotice(HttpServletRequest request,UserNotice userNotice) {
         boolean admin = UserUtils.isAdmin(request);
         if (!admin) {

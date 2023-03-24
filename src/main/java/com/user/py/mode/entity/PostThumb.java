@@ -30,7 +30,7 @@ public class PostThumb implements Serializable {
 
     private static final long serialVersionUID = 1048562013821311399L;
     @ApiModelProperty("id")
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
     @ApiModelProperty("帖子 id")

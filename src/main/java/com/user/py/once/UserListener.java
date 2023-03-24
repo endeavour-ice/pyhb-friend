@@ -3,7 +3,7 @@ package com.user.py.once;
 
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.read.listener.ReadListener;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author ice
@@ -11,7 +11,7 @@ import lombok.extern.log4j.Log4j2;
  */
 
 // 有个很重要的点 DemoDataListener 不能被spring管理，要每次读取excl都要new,然后里面用到spring可以构造方法传进去
-@Log4j2
+@Slf4j
 public class UserListener implements ReadListener<DemoUser> {
 
 

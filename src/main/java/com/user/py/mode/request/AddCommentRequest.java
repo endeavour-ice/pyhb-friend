@@ -16,6 +16,4 @@ public class AddCommentRequest implements Serializable {
     private String postId;
     private String userId;
     private String content;
-    private String replyId;
-
 }

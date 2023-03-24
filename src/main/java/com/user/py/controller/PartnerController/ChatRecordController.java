@@ -2,8 +2,8 @@ package com.user.py.controller.PartnerController;
 
 
 import com.user.py.common.B;
-import com.user.py.mode.entity.ChatRecord;
 import com.user.py.mode.entity.User;
+import com.user.py.mode.entity.vo.ChatList;
 import com.user.py.service.IChatRecordService;
 import com.user.py.utils.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 /**
  * <p>
@@ -32,10 +31,10 @@ public class ChatRecordController {
     private IChatRecordService recordService;
 
     // 查询所有的聊天记录
-    @GetMapping("/getList")
-    public B<List<ChatRecord>> getAllRecordList(@RequestParam(required = false) String friendId, HttpServletRequest request) {
+    @GetMapping("/chat")
+    public B<ChatList> getAllRecordList(@RequestParam(required = false) String friendId, HttpServletRequest request) {
         User loginUser = UserUtils.getLoginUser(request);
-        List<ChatRecord> list =  recordService.selectAllList(friendId, loginUser.getId());
+        ChatList list =  recordService.selectAllList(friendId, loginUser.getId());
         return B.ok(list);
     }
 }

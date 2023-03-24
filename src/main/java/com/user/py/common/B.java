@@ -86,7 +86,7 @@ class B<T> implements Serializable {
     }
 
     public static <T> B<T> error(ErrorCode errorCode) {
-        return new B<>(errorCode);
+        return B.error(errorCode.getCode(), errorCode.getMessage(), errorCode.getDescription());
     }
 
     public static <T> B<T> error(ErrorCode errorCode, String message) {

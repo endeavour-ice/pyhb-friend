@@ -36,4 +36,6 @@ public class SafetyUserResponse implements Serializable {
 
     private String email;
 
+    private String status;
+
 }

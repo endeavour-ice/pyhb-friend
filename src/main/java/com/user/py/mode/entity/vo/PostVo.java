@@ -3,6 +3,7 @@ package com.user.py.mode.entity.vo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -17,11 +18,12 @@ public class PostVo implements Serializable {
     private String content;
     private Integer thumb;
     private Integer collect;
-    private UserAvatarVo userAvatarVo;
+    private PostUserVo postUserVo;
     private String tag;
-    private List<String> commentList;
+    private List<CommentVo> commentList;
     private boolean hasThumb =false;
     private boolean hasCollect = false;
+    private LocalDateTime createTime;
 
 }
 

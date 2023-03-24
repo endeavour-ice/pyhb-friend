@@ -1,7 +1,6 @@
 package com.user.py.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -9,15 +8,14 @@ import com.user.py.common.ErrorCode;
 import com.user.py.designPatten.singleton.GsonUtils;
 import com.user.py.exception.GlobalException;
 import com.user.py.mapper.PostMapper;
-import com.user.py.mode.constant.RedisKey;
+import com.user.py.mode.constant.CacheConstants;
+import com.user.py.mode.dto.PageFilter;
 import com.user.py.mode.entity.*;
-import com.user.py.mode.entity.vo.CollectThumbVo;
 import com.user.py.mode.entity.vo.CommentVo;
+import com.user.py.mode.entity.vo.PostUserVo;
 import com.user.py.mode.entity.vo.PostVo;
 import com.user.py.mode.entity.vo.UserAvatarVo;
-import com.user.py.mode.request.AddCommentRequest;
-import com.user.py.mode.request.AddPostRequest;
-import com.user.py.mode.request.PostPageRequest;
+import com.user.py.mode.request.*;
 import com.user.py.service.*;
 import com.user.py.utils.RedisCache;
 import com.user.py.utils.SensitiveUtils;
@@ -34,10 +32,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -58,12 +57,13 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
     @Resource
     private RedisCache redisCache;
     @Resource
-    private IPostCommentService  commentService;
+    private IPostCommentService commentService;
     @Resource
     private DataSourceTransactionManager dataSourceTransactionManager;
     @Resource
     private TransactionDefinition transactionDefinition;
-
+    @Resource
+    private ExecutorService executorService;
     @Resource
     private IPostCollectService collectService;
 
@@ -101,7 +101,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
                     }
                     tag = gson.toJson(tagList);
                 } catch (Exception e) {
-                    throw new GlobalException(ErrorCode.PARAMS_ERROR);
+                    log.error(e.getMessage());
+                    throw new GlobalException(ErrorCode.PARAMS_ERROR, "解析出错");
                 }
             }
             if (!StringUtils.hasText(content)) {
@@ -110,7 +111,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             try {
                 content = SensitiveUtils.sensitive(content);
             } catch (Exception e) {
-                throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+                throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION, "过滤失败");
             }
             Post post = new Post();
             post.setUserId(userId);
@@ -123,216 +124,193 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         }
     }
 
+
     @Override
-    public Map<String, Object> getPostListByUser(PostPageRequest postPageRequest, HttpServletRequest request) {
+    public Map<String, Object> getPostList(PostPageRequest postPageRequest, HttpServletRequest request) {
         if (postPageRequest == null) {
             throw new GlobalException(ErrorCode.NULL_ERROR);
         }
-        AtomicInteger totalThumb = new AtomicInteger();
-        Integer sorted = postPageRequest.getSorted();
-        User loginUser = UserUtils.getLoginUser(request);
-        String userId = loginUser.getId();
-        String userAccount = loginUser.getUserAccount();
-        String avatarUrl = loginUser.getAvatarUrl();
-        QueryWrapper<Post> wrapper = new QueryWrapper<>();
-        wrapper.select("id", "content", "tags", "collect_num", "thumb_num");
-        wrapper.eq("user_id", userId);
-        List<Post> list = this.list(wrapper);
-        List<PostVo> postVoList = list.stream().map(post -> {
-            PostVo postVo = new PostVo();
-            postVo.setId(post.getId());
-            postVo.setContent(post.getContent());
-            Integer thumbNum = post.getThumbNum();
-            Integer collectNum = post.getCollectNum();
-            totalThumb.addAndGet(thumbNum);
-            postVo.setThumb(thumbNum);
-            postVo.setCollect(collectNum);
-            postVo.setTag(post.getTags());
-            UserAvatarVo userAvatarVo = new UserAvatarVo();
-            userAvatarVo.setId(userId);
-            userAvatarVo.setUsername(userAccount);
-            userAvatarVo.setAvatarUrl(avatarUrl);
-            postVo.setUserAvatarVo(userAvatarVo);
-            return postVo;
-        }).collect(Collectors.toList());
-        postVoList = getPostVoList(postVoList, request);
-        QueryWrapper<PostCollect> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId);
-        long totalCollect = collectService.count(queryWrapper);
+        // 过滤post的页面
+        PageFilter pageFilter = new PageFilter(postPageRequest.getPageNum(), postPageRequest.getPageSize());
+        long current = pageFilter.getCurrent();
+        long size = pageFilter.getSize();
+
         Map<String, Object> map = new HashMap<>();
-        map.put("totalThumb", totalThumb);
-        map.put("totalCollect", totalCollect);
-        map.put("totalPost", postVoList.size());
-        if (sorted == 1) {
-        } else if (sorted == 3) {
-            postVoList = postVoList.stream().sorted((a, b) -> Integer.compare(b.getThumb(), a.getThumb())).collect(Collectors.toList());
-        } else {
+        String userId = null;
+        if (postPageRequest.isOwn()) {
+            User user = UserUtils.getLoginUser(request);
+            userId = user.getId();
+        }
+        // 获取总数
+        String finalUserId = userId;
+        Integer total;
+        CompletableFuture<Integer> integerCompletableFuture;
+        integerCompletableFuture = CompletableFuture.supplyAsync(() -> baseMapper.selectCountById(finalUserId), executorService);
+        // 获取post列表和里面的用户名字头像id
+        List<PostVo> postVoList = baseMapper.selectPostByUserOrderPage(current, size, postPageRequest.getSorted(), userId);
+
+        postVoList = getPostVoList(postVoList, request);
+        try {
+            total = integerCompletableFuture.get();
+            if (!postPageRequest.isOwn()) {
+                redisCache.setCacheObject(CacheConstants.POST_TOTAL, total, TimeUtils.getRemainSecondsOneDay(new Date()), TimeUnit.SECONDS);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
             throw new GlobalException(ErrorCode.PARAMS_ERROR);
         }
-        map.put("postList", postVoList);
+        if (postVoList.isEmpty()) {
+            return map;
+        }
+        if (postPageRequest.getSorted() == 3 && postVoList.size() > 0) {
+            postVoList = postVoList.stream().sorted((a, b) -> Integer.compare(b.getThumb(), a.getThumb())).collect(Collectors.toList());
+        } else if (postPageRequest.getSorted() == 1 && postVoList.size() > 0) {
+            postVoList = postVoList.stream().sorted((a, b) -> {
+                LocalDateTime createTimeA = a.getCreateTime();
+                LocalDateTime createTimeB = b.getCreateTime();
+                return createTimeB.compareTo(createTimeA);
+            }).collect(Collectors.toList());
+        }
+        map.put("current", current);
+        map.put("size", size);
+        map.put("records", postVoList);
+        map.put("total", total);
+
         return map;
-    }
-
-    @Override
-    public Page<PostVo> getPostList(PostPageRequest postPageRequest, HttpServletRequest request) {
-        if (postPageRequest == null) {
-            throw new GlobalException(ErrorCode.NULL_ERROR);
-        }
-        long pageNum = postPageRequest.getPageNum();
-        long current = pageNum <= 0 ? 1 : pageNum;
-        long size = postPageRequest.getPageSize();
-        long pageSize = size <= 0 ? 10 : size;
-        if (pageSize > 30) {
-            pageSize = 20;
-        }
-        Page<PostVo> postVoPage = null;
-        CompletableFuture<Integer> integerCompletableFuture = null;
-        if (redisCache.hasKey(RedisKey.postTotal)) {
-            Integer total = redisCache.getCacheObject(RedisKey.postTotal);
-            postVoPage = new Page<>(current, pageSize, total);
-        } else {
-            integerCompletableFuture = CompletableFuture.supplyAsync(() -> {
-                int count = baseMapper.selectCountById();
-                redisCache.setCacheObject(RedisKey.postTotal, count, TimeUtils.getRemainSecondsOneDay(new Date()), TimeUnit.SECONDS);
-                return count;
-            });
-        }
-        long currentNum = (current - 1) * pageSize;
-        List<PostVo> postVoList = baseMapper.selectIndexByPage(currentNum, pageSize,postPageRequest.getSorted());
-
-        postVoList = getPostVoList(postVoList, request);
-        if (postVoPage == null) {
-            try {
-                Integer total = integerCompletableFuture.get();
-                postVoPage = new Page<>(current, pageSize, total);
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
-        } else {
-            postVoPage.setRecords(postVoList);
-        }
-        return postVoPage;
     }
 
     private List<PostVo> getPostVoList(List<PostVo> postVoList, HttpServletRequest request) {
         Map<String, List<PostVo>> postIdMap = postVoList.stream().collect(Collectors.groupingBy(PostVo::getId));
         Set<String> keySet = postIdMap.keySet();
         // 评论
-        CompletableFuture<Map<String, List<String>>> mapCompletableFuture = CompletableFuture.supplyAsync(() -> getCommentByListPostId(keySet));
-
+        if (keySet.isEmpty()) {
+            return new ArrayList<>();
+        }
+        CompletableFuture<Void> isThumb = null;
         // 是否点赞
         try {
             User loginUser = UserUtils.getLoginUser(request);
-            List<CollectThumbVo> collectThumbList = baseMapper.selectCTByPostIds(keySet, loginUser.getId());
-            for (CollectThumbVo collectThumbVo : collectThumbList) {
-                String collectPostId = collectThumbVo.getCollectPostId();
-                if (StringUtils.hasText(collectPostId)) {
-                    List<PostVo> postVos = postIdMap.get(collectPostId);
-                    if (!CollectionUtils.isEmpty(postVos)) {
-                        PostVo postVo = postVos.get(0);
-                        if (postVo != null) {
-                            postVo.setHasCollect(true);
+            isThumb = CompletableFuture.runAsync(() -> {
+                String userId = loginUser.getId();
+                QueryWrapper<PostCollect> postCollectQueryWrapper = new QueryWrapper<>();
+                postCollectQueryWrapper.in("post_id", keySet);
+                postCollectQueryWrapper.eq("user_id", userId);
+                postCollectQueryWrapper.select("post_id");
+                List<PostCollect> collectList = collectService.list(postCollectQueryWrapper);
+                for (PostCollect postCollect : collectList) {
+                    String collectPostId = postCollect.getPostId();
+                    if (StringUtils.hasText(collectPostId)) {
+                        List<PostVo> postVos = postIdMap.get(collectPostId);
+                        if (!CollectionUtils.isEmpty(postVos)) {
+                            PostVo postVo = postVos.get(0);
+                            if (postVo != null) {
+                                postVo.setHasCollect(true);
+                            }
                         }
                     }
                 }
-                String thumbPostId = collectThumbVo.getThumbPostId();
-                if (StringUtils.hasText(thumbPostId)) {
-                    List<PostVo> postVos = postIdMap.get(thumbPostId);
-                    if (!CollectionUtils.isEmpty(postVos)) {
-                        PostVo postVo = postVos.get(0);
-                        if (postVo != null) {
-                            postVo.setHasThumb(true);
+                QueryWrapper<PostThumb> thumbQueryWrapper = new QueryWrapper<>();
+                thumbQueryWrapper.in("post_id", keySet);
+                thumbQueryWrapper.eq("user_id", userId);
+                thumbQueryWrapper.select("post_id");
+                List<PostThumb> thumbList = thumbService.list(thumbQueryWrapper);
+                for (PostThumb postThumb : thumbList) {
+                    String thumbPostId = postThumb.getPostId();
+                    if (StringUtils.hasText(thumbPostId)) {
+                        List<PostVo> postVos = postIdMap.get(thumbPostId);
+                        if (!CollectionUtils.isEmpty(postVos)) {
+                            PostVo postVo = postVos.get(0);
+                            if (postVo != null) {
+                                postVo.setHasThumb(true);
+                            }
                         }
                     }
                 }
-            }
+            }, executorService);
         } catch (Exception e) {
             //无登录不做特殊处理
         }
-        Map<String, List<String>> commentByListPostId;
-        try {
-            commentByListPostId = mapCompletableFuture.get();
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+
+        Set<String> userIdList = new HashSet<>();
+        // 获取post的评论和用户
+        List<CommentVo> postCommentByPostIds = baseMapper.getPostCommentByPostIds(keySet);
+        for (CommentVo postCommentByPostId : postCommentByPostIds) {
+            PostUserVo owner = postCommentByPostId.getOwner();
+            if (owner == null) {
+                continue;
+            }
+            String id = owner.getId();
+            if (!StringUtils.hasText(id)) {
+                continue;
+            }
+            userIdList.add(id);
         }
+        for (String postId : keySet) {
+            PostVo postVo = postIdMap.get(postId).get(0);
+            if (postVo != null) {
+                String userId = postVo.getPostUserVo().getId();
+                userIdList.add(userId);
+            }
+        }
+        Map<String, List<PostUserVo>> postUserVoListById = new HashMap<>();
+        if (userIdList.size() > 0) {
+            postUserVoListById = baseMapper.selectPostThumbTotal(userIdList).stream().collect(Collectors.groupingBy(UserAvatarVo::getId));
+        }
+        Map<String, List<CommentVo>> commentVoByPostIds = postCommentByPostIds.stream().collect(Collectors.groupingBy(CommentVo::getPostId));
+
         for (String postVoId : keySet) {
             PostVo postVo = postIdMap.get(postVoId).get(0);
-            postVo.setCommentList(commentByListPostId.get(postVoId));
+            PostUserVo postUserVo = postVo.getPostUserVo();
+            String id = postUserVo.getId();
+            PostUserVo userVo = postUserVoListById.get(id).get(0);
+            String postTotal = userVo.getPostTotal();
+            String joinTime = userVo.getJoinTime();
+            String thumbTotal = userVo.getThumbTotal();
+            postUserVo.setPostTotal(postTotal);
+            postUserVo.setJoinTime(joinTime);
+            postUserVo.setThumbTotal(thumbTotal);
+            List<CommentVo> commentVos = commentVoByPostIds.get(postVoId);
+            if (!CollectionUtils.isEmpty(commentVos)) {
+                for (CommentVo commentVo : commentVos) {
+                    if (commentVo == null || commentVo.getOwner() == null) {
+                        continue;
+                    }
+                    String userId = commentVo.getOwner().getId();
+                    if (!StringUtils.hasText(userId)) {
+                        continue;
+                    }
+
+                    List<PostUserVo> postUserVos = postUserVoListById.get(userId);
+                    if (postUserVos==null||postUserVos.isEmpty() || postUserVos.get(0) == null) {
+                        continue;
+                    }
+                    PostUserVo vo = postUserVos.get(0);
+                    PostUserVo owner = commentVo.getOwner();
+                    if (vo == null || owner == null) {
+                        continue;
+                    }
+                    postTotal = vo.getPostTotal();
+                    joinTime = vo.getJoinTime();
+                    thumbTotal = vo.getThumbTotal();
+                    owner.setPostTotal(postTotal);
+                    owner.setJoinTime(joinTime);
+                    owner.setThumbTotal(thumbTotal);
+                }
+            }
+            postVo.setCommentList(commentVos);
         }
+        if (isThumb != null) {
+            try {
+                isThumb.join();
+            } catch (Exception e) {
+                log.error("是否点赞多线程错误", e);
+                throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+            }
+        }
+
         return postIdMap.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
-    /**
-     * 获取标签
-     *
-     * @return
-     */
-    private Map<String, UserLabel> getLabelMap() {
-        List<UserLabel> labelList = labelService.list();
-        if (labelList != null && labelList.size() > 0) {
-            return labelList.stream().collect(Collectors.toMap(UserLabel::getId, userLabel -> userLabel));
-        }
-        return null;
-    }
-
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean removePostByID(String id, User loginUser) {
-        if (!StringUtils.hasText(id)) {
-            throw new GlobalException(ErrorCode.PARAMS_ERROR);
-        }
-        Post post = baseMapper.selectById(id);
-        if (post == null) {
-            throw new GlobalException(ErrorCode.NULL_ERROR, "数据不存在");
-        }
-        String userId = loginUser.getId();
-        boolean admin = UserUtils.isAdmin(loginUser);
-        if (!id.equals(userId) && !admin) {
-            throw new GlobalException(ErrorCode.NO_AUTH);
-        }
-        int deleteById = baseMapper.deleteById(id);
-        if (deleteById <= 0) {
-            throw new GlobalException(ErrorCode.PARAMS_ERROR);
-        }
-        QueryWrapper<PostThumb> thumbQueryWrapper = new QueryWrapper<>();
-        thumbQueryWrapper.eq("post_id", id);
-        if (thumbService.count(thumbQueryWrapper) > 0) {
-            if (!thumbService.removeById(thumbQueryWrapper)) {
-                throw new GlobalException(ErrorCode.PARAMS_ERROR);
-            }
-        }
-        return true;
-    }
-
-    private Map<String, List<String>> getCommentByListPostId(Collection<String> postIds) {
-        Map<String, List<String>> hashMap = new HashMap<>(postIds.size());
-        if (CollectionUtils.isEmpty(postIds)) {
-            return hashMap;
-        }
-        List<CommentVo> postCommentByPostIds = baseMapper.getPostCommentByPostIds(postIds);
-        Map<String, List<CommentVo>> map = postCommentByPostIds.stream().collect(Collectors.groupingBy(CommentVo::getPostId));
-        Set<String> pIds = map.keySet();
-        for (String pId : pIds) {
-            List<String> commentStringList = new ArrayList<>();
-            List<CommentVo> commentVoList = map.get(pId);
-            for (CommentVo commentVo : commentVoList) {
-                String commentName = commentVo.getCommentName();
-                String replyName = commentVo.getReplyName();
-                String content = commentVo.getContent();
-                String format;
-                if (StringUtils.hasText(replyName)) {
-                    format = String.format("%s 回复 %s: %s", commentName, replyName, content);
-                } else {
-                    format = String.format("%s: %s", commentName, content);
-                }
-                commentStringList.add(format);
-            }
-            hashMap.put(pId, commentStringList);
-        }
-        return hashMap;
-    }
 
     @Override
     public boolean doThumb(String postId, HttpServletRequest request) {
@@ -400,7 +378,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
                     }
                     return false;
                 }
-
             }
         }
     }
@@ -474,6 +451,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             }
         }
     }
+
     @Override
     public boolean doComment(AddCommentRequest commentRequest, HttpServletRequest request) {
         if (commentRequest == null) {
@@ -481,10 +459,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         }
         User loginUser = UserUtils.getLoginUser(request);
         String postId = commentRequest.getPostId();
-
         String userId = commentRequest.getUserId();
         String content = commentRequest.getContent();
-        String replyId = commentRequest.getReplyId();
         if (!StringUtils.hasText(postId)) {
             throw new GlobalException(ErrorCode.NULL_ERROR);
         }
@@ -514,22 +490,16 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             if (count > 2) {
                 throw new GlobalException(ErrorCode.PARAMS_ERROR, "评论重复");
             }
-
             PostComment postComment = new PostComment();
-
-            // 判断是回复，还是评论
-            if (StringUtils.hasText(replyId)) {
-                postComment.setReplyId(replyId);
-            }
             postComment.setPostId(postId);
             postComment.setUserId(userId);
-
             postComment.setContent(content);
             return commentService.save(postComment);
         }
 
 
     }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean delPost(String id, HttpServletRequest request) {
@@ -543,7 +513,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         }
         String loginUserId = loginUser.getId();
         String userId = post.getUserId();
-        if (!loginUserId.equals(userId)&&!UserUtils.isAdmin(loginUser)) {
+        if (!loginUserId.equals(userId) && !UserUtils.isAdmin(loginUser)) {
             throw new GlobalException(ErrorCode.NO_AUTH);
         }
         QueryWrapper<PostThumb> thumbQueryWrapper = new QueryWrapper<>();
@@ -556,5 +526,130 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
         commentQueryWrapper.eq("post_id", id);
         commentService.remove(commentQueryWrapper);
         return this.removeById(id);
+    }
+
+    /**
+     * 获取收藏数
+     *
+     * @param request
+     * @return
+     */
+    @Override
+    public Map<String, String> getPostByCollection(HttpServletRequest request) {
+        User user = UserUtils.getLoginUser(request);
+        String id = user.getId();
+        Map<String, String> map = new HashMap<>(3);
+        List<PostUserVo> postUserVos = baseMapper.selectPostThumbTotal(Collections.singletonList(id));
+        if (postUserVos.isEmpty()) {
+            return null;
+        }
+        PostUserVo postUserVo = postUserVos.get(0);
+        String totalPost = postUserVo.getPostTotal();
+        String totalThumb = postUserVo.getThumbTotal();
+        QueryWrapper<PostCollect> wrapper = new QueryWrapper<>();
+        wrapper.eq("user_id", id);
+        long count = collectService.count(wrapper);
+        String totalCollect = String.valueOf(count);
+        map.put("totalPost", totalPost);
+        map.put("totalThumb", totalThumb);
+        map.put("totalCollect", totalCollect);
+        return map;
+    }
+
+    @Override
+    public PostVo getPost(String postId, User loginUser) {
+        String userId = loginUser.getId();
+        PostVo postVo = baseMapper.selectPostUserOrderById(postId);
+        if (postVo == null) {
+            throw new GlobalException(ErrorCode.NULL_ERROR);
+        }
+        List<CommentVo> commentVoList = baseMapper.getPostCommentByPostIds(Collections.singletonList(postId));
+        for (CommentVo commentVo : commentVoList) {
+            String userID = commentVo.getOwner().getId();
+            if (userID.equals(userId)) {
+                commentVo.set_com(true);
+            }
+        }
+        postVo.setCommentList(commentVoList);
+        QueryWrapper<PostCollect> postCollectQueryWrapper = new QueryWrapper<>();
+        postCollectQueryWrapper.eq("post_id", postId);
+        postCollectQueryWrapper.eq("user_id", userId);
+        long countCollect = collectService.count(postCollectQueryWrapper);
+        if (countCollect == 1) {
+            postVo.setHasCollect(true);
+        }
+        QueryWrapper<PostThumb> thumbQueryWrapper = new QueryWrapper<>();
+        thumbQueryWrapper.eq("post_id", postId);
+        thumbQueryWrapper.eq("user_id", userId);
+
+        long countThumb = thumbService.count(thumbQueryWrapper);
+        if (countThumb == 1) {
+            postVo.setHasThumb(true);
+        }
+        this.update()
+                .eq("id", postVo.getId())
+                .setSql("view_num=view_num+1").update();
+        return postVo;
+    }
+
+    /**
+     * 根据收藏数获取文章
+     *
+     * @param request
+     * @return
+     */
+    @Override
+    public List<PostVo> getPostByCollect(HttpServletRequest request) {
+        User loginUser = UserUtils.getLoginUser(request);
+        String userId = loginUser.getId();
+        return baseMapper.selectPostCollectByUserId(userId);
+    }
+
+    @Override
+    public List<PostVo> searchPost(SearchPostRequest searchPostRequest, User loginUser) {
+        if (searchPostRequest == null) {
+            throw new GlobalException(ErrorCode.PARAMS_ERROR);
+        }
+        String content = searchPostRequest.getContent();
+        String userId = searchPostRequest.getUserId();
+        List<PostVo> postVoList = null;
+        if (StringUtils.hasText(content)) {
+            postVoList = baseMapper.searchContent(content);
+            return postVoList;
+        } else if (StringUtils.hasText(userId)) {
+            postVoList = baseMapper.searchUser(userId);
+        }
+
+        return postVoList;
+    }
+
+    @Override
+    public boolean delComment(DelCommRequest commRequest, HttpServletRequest request) {
+        if (commRequest==null) {
+            throw new GlobalException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = UserUtils.getLoginUser(request);
+        String userId = user.getId();
+        synchronized (userId.intern()) {
+            String id = commRequest.getId();
+            String postId = commRequest.getPostId();
+            if (!StringUtils.hasText(id)||!StringUtils.hasText(postId)) {
+                throw new GlobalException(ErrorCode.PARAMS_ERROR);
+            }
+            PostComment comment = commentService.getById(id);
+            if (comment == null) {
+                throw new GlobalException(ErrorCode.NULL_ERROR);
+            }
+            String commentUserId = comment.getUserId();
+            String commentPostId = comment.getPostId();
+            if (!StringUtils.hasText(commentUserId)||!StringUtils.hasText(commentPostId)) {
+                throw new GlobalException(ErrorCode.SYSTEM_EXCEPTION);
+            }
+            if (!userId.equals(commentUserId)||!postId.equals(commentPostId)) {
+                throw new GlobalException(ErrorCode.NO_AUTH);
+            }
+            return commentService.removeById(comment.getId());
+        }
+
     }
 }

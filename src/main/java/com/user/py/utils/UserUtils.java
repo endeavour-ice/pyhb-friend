@@ -4,7 +4,9 @@ import com.user.py.common.ErrorCode;
 import com.user.py.exception.GlobalException;
 import com.user.py.mode.entity.User;
 import com.user.py.mode.entity.vo.UserVo;
+import com.user.py.mode.enums.UserStatus;
 import com.user.py.mode.resp.SafetyUserResponse;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
@@ -26,8 +28,9 @@ public class UserUtils {
         if (request == null) {
             throw new GlobalException(ErrorCode.NO_LOGIN);
         }
+
         User user = JwtUtils.getMemberIdByJwtToken(request);
-        if (user == null) {
+        if (user == null|| !StringUtils.hasText(user.getId())) {
             throw new GlobalException(ErrorCode.NO_LOGIN);
         }
         return user;
@@ -65,6 +68,12 @@ public class UserUtils {
         safetyUserResponse.setTags(user.getTags());
         safetyUserResponse.setProfile(user.getProfile());
         safetyUserResponse.setTel(user.getTel());
+        Integer status = user.getUserStatus();
+        if ( status== UserStatus.NORMAL.getKey()) {
+            safetyUserResponse.setStatus("公开");
+        } else if (status == UserStatus.PRIVATE.getKey()) {
+            safetyUserResponse.setStatus("私密");
+        }
         safetyUserResponse.setEmail(user.getEmail());
         return safetyUserResponse;
     }

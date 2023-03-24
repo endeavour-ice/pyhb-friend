@@ -16,8 +16,8 @@ import java.io.Serializable;
 @Data
 public class PostPageRequest extends PageRequest implements Serializable  {
     private static final long serialVersionUID = 7013584199865595352L;
-    @ApiModelProperty("创建用户 id")
-    private String userId;
+    @ApiModelProperty("是否是本人")
+    private boolean isOwn=false;
 
     @ApiModelProperty("内容")
     private String content;
