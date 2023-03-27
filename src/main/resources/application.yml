@@ -65,13 +65,12 @@ mybatis-plus:
 aliyun:
   oss:
     file:
-      endpoint: oss-cn-hangzhou.aliyuncs.com
-      keyid: LTAI5tN1Ga2AehUD3HWyprsx
-      keysecret: QpK6KNMFoZdS8koHCDu5zvGc1ZTojN
-      bucketname: bing-edu
+      endpoint: 
+      keyid: 
+      keysecret: 
+      bucketname: 
 email:
-  fromEmail: verification_ice@qq.com
-  password: epkpjdtspfxxebae
-
+  fromEmail: 
+  password: 
 chatGpt:
-  token: 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
+  token: 
