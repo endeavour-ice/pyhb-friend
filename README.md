@@ -6,9 +6,9 @@
 
 **项目地址：[jane.fit](http://jane.fit)**
 
-**前端地址： https://github.com/qimu666/jujiao-garden-frontend**
+**前端地址： https://github.com/endeavour-ice/Partner-System-Web**
 
- **后端地址： https://github.com/qimu666/jujiao-yuan-backend**
+ **后端地址：https://github.com/endeavour-ice/pyhb-friend**
 
 🙏🏻 **大家喜欢这个项目的话，感谢动手点点 star**
 
@@ -58,4 +58,48 @@
 
 - 使用了Netty作为消息的转发
 - 同时支持ChatGPT回答
+
+### ES
+
+- 使用了IK分词器
+- 建议自己先创建索引，不然会出现不知名的报错
+
+```
+PUT /post_v1
+{
+   "aliases":{
+       "post":{}
+   },
+    "mappings":{
+        "properties":{
+            "content":{
+                "type":"text",
+                "analyzer":"ik_max_word",
+                "search_analyzer":"ik_smart",
+                "fields":{
+                    "keyword":{
+                        "type":"keyword",
+                        "ignore_above":256
+                    }
+                }
+            },
+            "tags":{
+              "type": "keyword"
+            },
+            "userId":{
+              "type": "keyword"
+            },
+            "createTime":{
+              "type": "date"
+            },
+            "updateTime":{
+              "type": "date"
+            },
+            "isDelete":{
+              "type": "integer"
+            }
+        }
+    }
+}
+```
 
